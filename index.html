@@ -2413,15 +2413,6 @@ function renderAdmin(ti){
 }
 
 /* ============================================================
-   HUD 이름 칩 = 계정 (로그아웃)
-============================================================ */
-document.getElementById('hProfChip').onclick=()=>{
-  if(!started || quizOpen || shopOpen) return;
-  sfx.click();
-  askConfirm('<b>'+(S.name||S.loginId)+'</b> 계정에서 로그아웃할까요?<br><span style="font-size:14px;color:var(--sub);">진행은 자동 저장돼요</span>', logout);
-};
-
-/* ============================================================
    프로필 시스템 (로그인 없이 선택형, 기기별 저장)
 ============================================================ */
 function syncProfilesUI(){ syncTitleInputs(); renderProfiles(); }
@@ -2533,25 +2524,7 @@ function applyProfile(i){
   setTimeout(checkAttendance, 500);
 }
 
-/* ---------- 초기 진입 ---------- */
-(function initGame(){
-  syncSound();
-  ROOT.active=Math.min(ROOT.active||0, ROOT.profiles.length-1);
-  S=normalizeProfile(ROOT.profiles[ROOT.active]); save();
-  syncProfilesUI();
-  document.getElementById('startScreen').style.display='flex';
-  const ls=document.getElementById('loadScreen');
-  if(ls){
-    const tip=ls.querySelector('.loadTip'); if(tip) tip.innerText='모험 준비 완료!';
-    setTimeout(()=>{ ls.classList.add('done'); setTimeout(()=>ls.remove(),600); },350);
-  }
-})();
-/* PWA 서비스워커 등록 (홈 화면 설치 + 오프라인) */
-if('serviceWorker' in navigator && location.protocol==='https:'){
-  window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('./sw.js').catch(()=>{});
-  });
-}
+/* ---------- 초기 진입은 PREVIEWS 생성 이후로 이동됨 (아래 참고) ---------- */
 
 function backToTitle(){
   closeSettings();
@@ -2858,6 +2831,26 @@ const PREVIEWS=[];
   pr.dispose();
   syncTitleInputs();
 })();
+
+/* ---------- 초기 진입 (PREVIEWS 준비 완료 후 실행) ---------- */
+(function initGame(){
+  syncSound();
+  ROOT.active=Math.min(ROOT.active||0, ROOT.profiles.length-1);
+  S=normalizeProfile(ROOT.profiles[ROOT.active]); save();
+  syncProfilesUI();
+  document.getElementById('startScreen').style.display='flex';
+  const ls=document.getElementById('loadScreen');
+  if(ls){
+    const tip=ls.querySelector('.loadTip'); if(tip) tip.innerText='모험 준비 완료!';
+    setTimeout(()=>{ ls.classList.add('done'); setTimeout(()=>ls.remove(),600); },350);
+  }
+})();
+/* PWA 서비스워커 등록 (홈 화면 설치 + 오프라인) */
+if('serviceWorker' in navigator && location.protocol==='https:'){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
 function syncTitleInputs(){
   document.getElementById('nameInput').value=S.name||'';
   selChar=S.charIdx||0;
