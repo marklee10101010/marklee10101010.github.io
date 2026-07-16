@@ -386,6 +386,14 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d1630;
 <div id="zoneBanner"></div>
 <div id="savedTag">저장됨 &#10003;</div>
 
+<div id="ansOverlay" style="position:fixed;inset:0;z-index:47;display:none;align-items:center;justify-content:center;pointer-events:none;">
+  <div id="ansCard" style="background:#fff;border-radius:26px;padding:26px 42px;box-shadow:0 20px 60px rgba(0,0,0,.35);text-align:center;animation:lvlPop .45s cubic-bezier(.2,1.6,.4,1);">
+    <div id="ansIcon" style="font-size:48px;"></div>
+    <div id="ansTitle" style="font-size:30px;margin-top:4px;"></div>
+    <div id="ansSub" style="font-size:20px;color:var(--sub);margin-top:6px;"></div>
+  </div>
+</div>
+
 <div id="lvlOverlay"><div id="lvlCard">
   <div class="t1">LEVEL UP!</div>
   <div class="t2" id="lvlNum"></div>
@@ -590,7 +598,7 @@ const WORLDS=[
 /* ============================================================
    버전 / 멀티 프로필 저장
 ============================================================ */
-const VERSION='3.1.2';
+const VERSION='3.1.3';
 const SAVE_VER=3;
 const SAVE_KEY='starlight3d_mp';
 const MAX_PROFILES=4;
@@ -1966,8 +1974,7 @@ function hgPick(ch,btn){
       juiceCorrect(document.getElementById('hgBlanks'), Q.combo);
       questProg('ans');
       speakEn(H.word);
-      document.getElementById('hgBlanks').insertAdjacentHTML('beforeend',
-        '<div style="width:100%;text-align:center;color:#1c7a47;font-size:19px;margin-top:8px;">정답! '+H.word.toLowerCase()+' = '+H.mean+'</div>');
+      showAnswerFx(true, '정답!', H.word.toLowerCase()+' = '+H.mean);
       setTimeout(()=>{ Q.idx++; nextQ(); }, 1400);
     }
   } else {
@@ -1982,13 +1989,27 @@ function hgPick(ch,btn){
       addWrong('castle', {prompt:`'${H.mean}' 은(는) 영어로?`, options:opts, answerIndex:opts.indexOf(H.word.toLowerCase())});
       H.word.split('').forEach(c=>H.guessed.add(c));
       hgDrawBlanks();
-      document.getElementById('hgBlanks').insertAdjacentHTML('beforeend',
-        '<div style="width:100%;text-align:center;color:#a83030;font-size:18px;margin-top:8px;">아쉬워요! 정답은 '+H.word.toLowerCase()+' ('+H.mean+')</div>');
       speakEn(H.word);
+      showAnswerFx(false, '아쉬워요!', '정답은 <b style="color:#243044;">'+H.word.toLowerCase()+'</b> ('+H.mean+')');
       setTimeout(()=>{ Q.idx++; nextQ(); }, 1800);
     }
   }
 }
+/* ---------- 정답/오답 결과 오버레이 ---------- */
+let ansFxTimer=null;
+function showAnswerFx(ok, title, sub){
+  const o=document.getElementById('ansOverlay');
+  const c=document.getElementById('ansCard');
+  document.getElementById('ansIcon').innerHTML= ok ? '&#127881;' : '&#128173;';
+  const t=document.getElementById('ansTitle');
+  t.innerText=title; t.style.color= ok ? '#1c7a47' : '#a83030';
+  document.getElementById('ansSub').innerHTML=sub||'';
+  o.style.display='flex';
+  c.style.animation='none'; void c.offsetWidth; c.style.animation='';
+  clearTimeout(ansFxTimer);
+  ansFxTimer=setTimeout(()=>{ o.style.display='none'; }, ok?1150:1600);
+}
+
 /* ---------- 정답 연출 ---------- */
 function juiceCorrect(el, combo){
   try{
@@ -2108,7 +2129,7 @@ document.getElementById('resAgain').onclick=()=>{ sfx.click(); if(Q.review) star
 document.getElementById('levelClose').onclick=closeQuiz;
 document.getElementById('resOut').onclick=closeQuiz;
 document.getElementById('quizClose').onclick=closeQuiz;
-function closeQuiz(){ sfx.click(); overlay.style.display='none'; quizOpen=false; document.getElementById('comboBadge').style.display='none'; }
+function closeQuiz(){ sfx.click(); overlay.style.display='none'; quizOpen=false; document.getElementById('comboBadge').style.display='none'; document.getElementById('ansOverlay').style.display='none'; }
 /* 장면 전환 효과 */
 let transLock=false;
 function playTransition(color, cb){
