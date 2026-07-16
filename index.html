@@ -413,7 +413,15 @@ const CAPITAL_DATA=[
 {flag:'&#127481;&#127469;',country:'태국',capital:'방콕'},{flag:'&#127483;&#127475;',country:'베트남',capital:'하노이'},
 {flag:'&#127470;&#127465;',country:'인도네시아',capital:'자카르타'},{flag:'&#127480;&#127468;',country:'싱가포르',capital:'싱가포르'},
 {flag:'&#127475;&#127487;',country:'뉴질랜드',capital:'웰링턴'},{flag:'&#127482;&#127462;',country:'우크라이나',capital:'키이우'},
-{flag:'&#127464;&#127487;',country:'체코',capital:'프라하'},{flag:'&#127469;&#127482;',country:'헝가리',capital:'부다페스트'}
+{flag:'&#127464;&#127487;',country:'체코',capital:'프라하'},{flag:'&#127469;&#127482;',country:'헝가리',capital:'부다페스트'},
+{flag:'&#127462;&#127479;',country:'아르헨티나',capital:'부에노스아이레스'},{flag:'&#127464;&#127473;',country:'칠레',capital:'산티아고'},
+{flag:'&#127477;&#127466;',country:'페루',capital:'리마'},{flag:'&#127464;&#127476;',country:'콜롬비아',capital:'보고타'},
+{flag:'&#127477;&#127469;',country:'필리핀',capital:'마닐라'},{flag:'&#127474;&#127486;',country:'말레이시아',capital:'쿠알라룸푸르'},
+{flag:'&#127474;&#127475;',country:'몽골',capital:'울란바토르'},{flag:'&#127475;&#127477;',country:'네팔',capital:'카트만두'},
+{flag:'&#127462;&#127481;',country:'오스트리아',capital:'빈'},{flag:'&#127463;&#127466;',country:'벨기에',capital:'브뤼셀'},
+{flag:'&#127470;&#127466;',country:'아일랜드',capital:'더블린'},{flag:'&#127470;&#127480;',country:'아이슬란드',capital:'레이캬비크'},
+{flag:'&#127479;&#127476;',country:'루마니아',capital:'부쿠레슈티'},{flag:'&#127469;&#127479;',country:'크로아티아',capital:'자그레브'},
+{flag:'&#127472;&#127466;',country:'케냐',capital:'나이로비'},{flag:'&#127474;&#127462;',country:'모로코',capital:'라바트'}
 ];
 const MARKET_ITEMS=[
 {icon:'&#127822;',name:'사과',price:300},{icon:'&#127820;',name:'바나나',price:500},{icon:'&#127838;',name:'빵',price:800},
@@ -438,7 +446,7 @@ const WORLDS=[
 /* ============================================================
    버전 / 멀티 프로필 저장
 ============================================================ */
-const VERSION='2.4.1';
+const VERSION='2.5.0';
 const SAVE_VER=3;
 const SAVE_KEY='starlight3d_mp';
 const MAX_PROFILES=4;
@@ -1439,6 +1447,16 @@ animate();
    퀴즈 엔진 (월드별 문제 생성기 - 원본 로직 이식)
 ============================================================ */
 function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+/* 카드 덱: 데이터를 전부 한 바퀴 돌 때까지 같은 문제가 다시 나오지 않음 */
+const DECKS={};
+function drawFrom(key, arr){
+  let d=DECKS[key];
+  if(!d || !d.length || d._n!==arr.length){
+    d=DECKS[key]=shuffle(arr.map((_,i)=>i));
+    d._n=arr.length;
+  }
+  return arr[d.pop()];
+}
 function numOpts(ans, spread, unit=''){
   const set=new Set([ans]);
   while(set.size<4){
@@ -1516,13 +1534,13 @@ const GEN={
     return { prompt:`${a} × ${b} = ?`, ...numOpts(ans, Math.max(6,Math.floor(ans*0.3))) };
   },
   village(){ /* 받아쓰기 (난이도는 문제 수/하트로 조절) */
-    const q=SPELLING_DATA[Math.floor(Math.random()*SPELLING_DATA.length)];
+    const q=drawFrom('village', SPELLING_DATA);
     const opts=shuffle([q.correct, ...q.wrongs.slice(0,1)]);
     return { prompt:q.sentence.replace('___','<span style="color:#5A8DEE">___</span>'),
       options:opts, answerIndex:opts.indexOf(q.correct), twoCol:true };
   },
   castle(p){ /* 영어: 1 뜻→영어, 2 영어→뜻, 3 랜덤 */
-    const q=ENGLISH_DATA[Math.floor(Math.random()*ENGLISH_DATA.length)];
+    const q=drawFrom('castle', ENGLISH_DATA);
     const mode = p===3 ? (Math.random()<0.5?1:2) : (p||1);
     if(mode===1){
       const set=new Set([q.word]);
@@ -1592,9 +1610,9 @@ const GEN={
     return { prompt:'색칠된 부분은 전체의 얼마일까요?', visual:fracSVG(num,den,'#39C6C0'),
       options:opts, answerIndex:opts.indexOf(ansTxt) };
   },
-  capital(p){ /* 세계 수도: 1 유명 국가 12개, 2 전체 */
+  capital(p){ /* 세계 수도: 1 유명 국가, 2 전체 52개국 */
     const pool = p===1 ? CAPITAL_DATA.slice(0,12) : CAPITAL_DATA;
-    const q=pool[Math.floor(Math.random()*pool.length)];
+    const q=drawFrom('capital'+(p===1?'1':'2'), pool);
     const set=new Set([q.capital]);
     while(set.size<4) set.add(pool[Math.floor(Math.random()*pool.length)].capital);
     const opts=shuffle([...set]);
@@ -1647,7 +1665,14 @@ function nextQ(){
   document.getElementById('quizProg').innerText=(Q.idx+1)+' / '+Q.total;
   document.getElementById('quizLives').innerHTML='&#10084;&#65039;'.repeat(Q.lives)+'&#129293;'.repeat(3-Q.lives);
   if(Q.lv && Q.lv.p==='hangman'){ renderHangman(); return; }
-  Q.cur = Q.review ? Q.queue[Q.idx].q : GEN[Q.world.id](Q.lv.p);
+  if(Q.review){ Q.cur=Q.queue[Q.idx].q; }
+  else {
+    if(!Q.seen) Q.seen=new Set();
+    let cur, tries=0;
+    do{ cur=GEN[Q.world.id](Q.lv.p); tries++; }while(Q.seen.has(cur.prompt) && tries<25);
+    Q.seen.add(cur.prompt);
+    Q.cur=cur;
+  }
   document.getElementById('quizVisual').innerHTML=Q.cur.visual||'';
   document.getElementById('quizPrompt').innerHTML=Q.cur.prompt;
   const box=document.getElementById('quizOpts');
@@ -1693,7 +1718,7 @@ function hangmanSVG(miss){
 }
 let H=null;
 function renderHangman(){
-  const q=ENGLISH_DATA[Math.floor(Math.random()*ENGLISH_DATA.length)];
+  const q=drawFrom('hangman', ENGLISH_DATA);
   H={word:q.word.toUpperCase(), mean:q.mean, guessed:new Set(), miss:0, done:false};
   document.getElementById('quizVisual').innerHTML=
     `<div id="hgFig">${hangmanSVG(0)}</div>
