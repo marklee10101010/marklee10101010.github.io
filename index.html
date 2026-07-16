@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>별빛 학습 퀘스트 3D</title>
+<meta name="theme-color" content="#131c3a">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -149,6 +152,59 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d1630;
 .clockFace{width:180px;height:180px;}
 .fracSvg{width:150px;height:150px;}
 
+/* ---------- 로딩 화면 ---------- */
+#loadScreen{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at 50% 30%, #33477e 0%, #131c3a 65%, #0b1226 100%);color:#fff;
+  transition:opacity .5s;gap:22px;}
+#loadScreen.done{opacity:0;pointer-events:none;}
+.loadLogo{font-size:min(9vw,42px);text-shadow:0 4px 0 rgba(0,0,0,.3);animation:logoBob 1.6s ease-in-out infinite;}
+.loadLogo b{color:var(--gold);}
+@keyframes logoBob{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+.loadBarWrap{width:min(260px,70vw);height:12px;background:rgba(255,255,255,.15);border-radius:99px;overflow:hidden;}
+.loadBar{height:100%;width:40%;border-radius:99px;background:linear-gradient(90deg,var(--gold),#F2A93B);
+  animation:loadSlide 1.1s ease-in-out infinite;}
+@keyframes loadSlide{0%{margin-left:-40%;}100%{margin-left:100%;}}
+.loadTip{color:#8fa3cf;font-size:15px;font-weight:normal;}
+
+/* ---------- 레벨업 연출 ---------- */
+#lvlOverlay{position:fixed;inset:0;z-index:46;display:none;align-items:center;justify-content:center;
+  background:rgba(13,22,48,.45);pointer-events:none;}
+#lvlCard{text-align:center;animation:lvlPop .5s cubic-bezier(.2,1.6,.4,1);}
+#lvlCard .t1{font-size:20px;color:var(--gold);letter-spacing:6px;}
+#lvlCard .t2{font-size:56px;color:#fff;text-shadow:0 5px 0 rgba(0,0,0,.35),0 0 30px rgba(255,211,92,.8);}
+@keyframes lvlPop{0%{transform:scale(.3);opacity:0;}60%{transform:scale(1.15);}100%{transform:scale(1);opacity:1;}}
+
+/* ---------- 출석 / 퀘스트 ---------- */
+.attDots{display:flex;gap:8px;justify-content:center;margin:14px 0;}
+.attDot{width:38px;height:38px;border-radius:50%;background:#EDF1F8;display:flex;align-items:center;justify-content:center;
+  font-size:13px;color:var(--sub);border:2px solid #E2E8F4;}
+.attDot.on{background:#FFF2CC;border-color:var(--gold);color:#b8860b;}
+.attDot.today{background:var(--gold);color:#5c4400;transform:scale(1.15);box-shadow:0 3px 10px rgba(255,211,92,.5);}
+.qBar{height:9px;background:#E2E8F4;border-radius:99px;overflow:hidden;margin-top:5px;}
+.qBar i{display:block;height:100%;background:linear-gradient(90deg,#9be15d,#00e3ae);border-radius:99px;}
+
+/* ---------- 콤보 / 파티클 / 다이아 비행 ---------- */
+#comboBadge{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:#FF6B4A;color:#fff;
+  border-radius:99px;padding:6px 18px;font-size:16px;box-shadow:0 4px 12px rgba(255,107,74,.5);
+  display:none;animation:comboPop .35s cubic-bezier(.2,1.8,.4,1);white-space:nowrap;z-index:2;}
+@keyframes comboPop{from{transform:translateX(-50%) scale(.4);}to{transform:translateX(-50%) scale(1);}}
+.spark{position:fixed;z-index:48;pointer-events:none;font-size:18px;animation:sparkFly .7s ease-out forwards;}
+@keyframes sparkFly{0%{transform:translate(0,0) scale(1);opacity:1;}100%{transform:translate(var(--dx),var(--dy)) scale(.3);opacity:0;}}
+.flyDia{position:fixed;z-index:48;pointer-events:none;font-size:22px;transition:all .65s cubic-bezier(.3,.7,.4,1);}
+.chipPulse{animation:chipP .35s;}
+@keyframes chipP{50%{transform:scale(1.18);}}
+.resStar{display:inline-block;animation:starIn .45s cubic-bezier(.2,1.8,.4,1) both;}
+@keyframes starIn{from{transform:scale(0) rotate(-60deg);}to{transform:scale(1) rotate(0);}}
+
+/* ---------- 저장 표시 / 토글 ---------- */
+#savedTag{position:fixed;top:calc(52px + env(safe-area-inset-top));right:14px;z-index:9;
+  background:rgba(30,42,74,.7);color:#9be15d;font-size:12px;padding:4px 12px;border-radius:99px;
+  opacity:0;transition:opacity .4s;pointer-events:none;}
+#savedTag.show{opacity:1;}
+.tog{border:none;border-radius:99px;padding:8px 18px;font-family:inherit;font-size:15px;}
+.tog.on{background:#E3F7EC;color:#1c7a47;}
+.tog.off{background:#EDF1F8;color:var(--sub);}
+
 /* ---------- 반응형: 세로 좁은 화면 ---------- */
 @media (max-width:440px){
   .chip{padding:6px 10px;gap:6px;border-radius:13px;}
@@ -213,6 +269,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d1630;
 </style>
 </head>
 <body>
+
+<div id="loadScreen">
+  <div class="loadLogo">별빛 학습 퀘스트 <b>3D</b></div>
+  <div class="loadBarWrap"><div class="loadBar"></div></div>
+  <div class="loadTip">떠 있는 섬들을 만드는 중...</div>
+</div>
 
 <canvas id="c3d"></canvas>
 
@@ -287,6 +349,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d1630;
   <div id="hudTopRight">
     <div class="chip"><span>&#128142;</span><span class="num" id="hDia">0</span></div>
     <div class="chip"><span style="color:var(--gold)">&#11088;</span><span class="num" id="hStar">0</span></div>
+    <div class="chip" id="hQuestChip" style="cursor:pointer;"><span>&#128220;</span><span class="num" id="hQuestN"></span></div>
     <div class="chip" id="hPetChip" style="cursor:pointer;"><span id="hPetIcon">&#128062;</span></div>
     <div class="chip" id="fsChip" style="cursor:pointer;"><span id="fsIcon">&#x26F6;</span></div>
     <div class="chip" id="setChip" style="cursor:pointer;"><span>&#9881;&#65039;</span></div>
@@ -294,6 +357,32 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d1630;
 </div>
 
 <div id="zoneBanner"></div>
+<div id="savedTag">저장됨 &#10003;</div>
+
+<div id="lvlOverlay"><div id="lvlCard">
+  <div class="t1">LEVEL UP!</div>
+  <div class="t2" id="lvlNum"></div>
+</div></div>
+
+<div id="attOverlay" style="position:fixed;inset:0;z-index:36;background:rgba(13,22,48,.55);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:var(--card);border-radius:26px;width:min(420px,94vw);padding:24px;box-shadow:0 24px 60px rgba(0,0,0,.4);animation:pop .3s;text-align:center;">
+    <div style="font-size:24px;">&#127873; 출석 보상</div>
+    <div id="attDay" style="color:var(--sub);font-size:16px;margin-top:4px;"></div>
+    <div class="attDots" id="attDots"></div>
+    <div id="attReward" style="font-size:22px;margin:6px 0 16px;"></div>
+    <button class="rBtn" id="attOk">받기!</button>
+  </div>
+</div>
+
+<div id="questOverlay" style="position:fixed;inset:0;z-index:36;background:rgba(13,22,48,.55);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:var(--card);border-radius:26px;width:min(440px,94vw);max-height:88vh;overflow-y:auto;padding:22px;box-shadow:0 24px 60px rgba(0,0,0,.4);animation:pop .3s;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div style="font-size:21px;">&#128220; 오늘의 퀘스트</div>
+      <button id="questClose" style="background:none;border:none;font-size:22px;color:var(--sub);font-family:inherit;">&#10005;</button>
+    </div>
+    <div id="questList"></div>
+  </div>
+</div>
 
 <div id="joyZone">
   <div id="joyBase"></div>
@@ -304,7 +393,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d1630;
 <div id="transWipe"></div>
 
 <div id="quizOverlay">
-  <div id="quizCard">
+  <div id="quizCard" style="position:relative;">
+    <div id="comboBadge"></div>
     <div id="levelBox" style="display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
         <div style="font-size:20px;display:flex;align-items:center;gap:8px;">
@@ -473,7 +563,7 @@ const WORLDS=[
 /* ============================================================
    버전 / 멀티 프로필 저장
 ============================================================ */
-const VERSION='3.0.1';
+const VERSION='3.1.0';
 const SAVE_VER=3;
 const SAVE_KEY='starlight3d_mp';
 const MAX_PROFILES=4;
@@ -504,15 +594,32 @@ if(ROOT.profiles.length===0) ROOT.profiles.push(defaultProfile());
 ROOT.profiles.forEach(normalizeProfile);
 ROOT.active=Math.min(ROOT.active||0, ROOT.profiles.length-1);
 let S=ROOT.profiles[ROOT.active];
+let savedTagTimer=null, savedTagLast=0;
 function save(){
   ROOT.profiles[ROOT.active]=S;
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify(ROOT)); }catch(e){}
+  const now=Date.now();
+  if(now-savedTagLast>4000){
+    savedTagLast=now;
+    const el=document.getElementById('savedTag');
+    if(el){ el.classList.add('show'); clearTimeout(savedTagTimer); savedTagTimer=setTimeout(()=>el.classList.remove('show'),1400); }
+  }
 }
 function xpNeed(lv){ return Math.floor(8 + Math.pow(lv,1.5)*2.5); }
 function addXp(n){
   S.xp+=n;
-  while(S.xp>=xpNeed(S.level)){ S.xp-=xpNeed(S.level); S.level++; toast('레벨 업! Lv.'+S.level); }
+  let up=false;
+  while(S.xp>=xpNeed(S.level)){ S.xp-=xpNeed(S.level); S.level++; up=true; }
+  if(up) showLevelUp(S.level);
   updateHud();
+}
+function showLevelUp(lv){
+  const o=document.getElementById('lvlOverlay');
+  document.getElementById('lvlNum').innerText='Lv.'+lv;
+  o.style.display='flex';
+  tone(523,.12,'triangle',.08); tone(659,.12,'triangle',.08,.12);
+  tone(784,.12,'triangle',.08,.24); tone(1047,.35,'triangle',.09,.36);
+  setTimeout(()=>{ o.style.display='none'; },1700);
 }
 function totalStars(){ return Object.values(S.stars).reduce((a,b)=>a+b,0); }
 function updateHud(){
@@ -530,10 +637,46 @@ function toast(msg){
 /* ============================================================
    간단 효과음 (WebAudio)
 ============================================================ */
-let AC=null;
-function initAudio(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==='suspended') AC.resume(); }
-function tone(f,dur,type='square',vol=0.06,delay=0){
+let AC=null, sfxOn=true, bgmOn=true;
+function initAudio(){
+  if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
+  if(AC&&AC.state==='suspended') AC.resume();
+  startBgm();
+}
+function rawTone(f,dur,type='square',vol=0.06,delay=0){
   if(!AC) return;
+  const o=AC.createOscillator(),g=AC.createGain();
+  o.type=type; o.frequency.value=f; g.gain.value=vol;
+  o.connect(g); g.connect(AC.destination);
+  const t=AC.currentTime+delay;
+  o.start(t); g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.001,t+dur); o.stop(t+dur+0.02);
+}
+/* BGM: 파일 없이 코드로 생성하는 잔잔한 펜타토닉 루프 */
+let bgmTimer=null, bgmStep=0;
+const BGM_SCALE=[392,440,523,587,659,784];
+function startBgm(){
+  if(!AC || bgmTimer || !bgmOn) return;
+  let cur=2;
+  bgmTimer=setInterval(()=>{
+    if(!bgmOn || document.hidden) return;
+    bgmStep++;
+    /* 부드러운 멜로디: 근접 음으로 랜덤 이동 */
+    cur=Math.max(0,Math.min(BGM_SCALE.length-1, cur+[-1,0,1,1,-1,2,-2][Math.floor(Math.random()*7)]));
+    if(bgmStep%2===0) rawTone(BGM_SCALE[cur],.5,'sine',.016);
+    if(bgmStep%8===0) rawTone(131,.9,'triangle',.02);
+    if(bgmStep%8===4) rawTone(165,.9,'triangle',.016);
+    if(bgmStep%16===0) rawTone(BGM_SCALE[cur]*2,.4,'sine',.008);
+  },430);
+}
+function stopBgm(){ if(bgmTimer){ clearInterval(bgmTimer); bgmTimer=null; } }
+function syncSound(){
+  if(!ROOT.sound) ROOT.sound={bgm:true,sfx:true};
+  bgmOn=ROOT.sound.bgm!==false;
+  sfxOn=ROOT.sound.sfx!==false;
+  if(!bgmOn) stopBgm(); else startBgm();
+}
+function tone(f,dur,type='square',vol=0.06,delay=0){
+  if(!AC || !sfxOn) return;
   const o=AC.createOscillator(),g=AC.createGain();
   o.type=type; o.frequency.value=f; g.gain.value=vol;
   o.connect(g); g.connect(AC.destination);
@@ -1021,6 +1164,7 @@ function openChest(c){
   if(isNight) dia=Math.round(dia*1.5);
   S.diamonds+=dia; save(); updateHud();
   toast('보물 발견! &#128142; +'+dia + (isNight?' (밤 보너스 1.5배!)':''));
+  questProg('chest');
   /* 뚜껑 열림 + 반짝이 */
   const sparks=[];
   for(let k=0;k<6;k++){
@@ -1679,7 +1823,8 @@ function openQuiz(world){
   overlay.style.display='flex';
 }
 function startRun(world, lv){
-  Q={ world, lv, idx:0, correct:0, lives:3, dia:0, xp:0, total:TOTAL_Q };
+  Q={ world, lv, idx:0, correct:0, lives:3, dia:0, xp:0, total:TOTAL_Q, combo:0 };
+  document.getElementById('comboBadge').style.display='none';
   if(world.id==='village' && lv.p===2){ Q.total=7; Q.lives=2; }
   document.getElementById('quizDot').style.background=world.css;
   document.getElementById('quizWName').innerText=world.name;
@@ -1789,6 +1934,9 @@ function hgPick(ch,btn){
       H.done=true; sfx.correct();
       recStat('castle', true);
       Q.correct++; Q.dia+=3; Q.xp+=3; S.diamonds+=3; addXp(3); save();
+      Q.combo=(Q.combo||0)+1;
+      juiceCorrect(document.getElementById('hgBlanks'), Q.combo);
+      questProg('ans');
       speakEn(H.word);
       document.getElementById('hgBlanks').insertAdjacentHTML('beforeend',
         '<div style="width:100%;text-align:center;color:#1c7a47;font-size:19px;margin-top:8px;">정답! '+H.word.toLowerCase()+' = '+H.mean+'</div>');
@@ -1813,6 +1961,53 @@ function hgPick(ch,btn){
     }
   }
 }
+/* ---------- 정답 연출 ---------- */
+function juiceCorrect(el, combo){
+  try{
+    const r=el.getBoundingClientRect();
+    const cx=r.left+r.width/2, cy=r.top+r.height/2;
+    /* 별가루 파티클 */
+    const glyphs=['&#11088;','&#10024;','&#128171;'];
+    for(let i=0;i<7;i++){
+      const sp=document.createElement('div');
+      sp.className='spark';
+      sp.innerHTML=glyphs[i%3];
+      const a=Math.random()*Math.PI*2, d=50+Math.random()*70;
+      sp.style.left=cx+'px'; sp.style.top=cy+'px';
+      sp.style.setProperty('--dx', Math.cos(a)*d+'px');
+      sp.style.setProperty('--dy', Math.sin(a)*d-30+'px');
+      document.body.appendChild(sp);
+      setTimeout(()=>sp.remove(),750);
+    }
+    /* 다이아 비행 -> HUD */
+    const dia=document.createElement('div');
+    dia.className='flyDia'; dia.innerHTML='&#128142;';
+    dia.style.left=cx+'px'; dia.style.top=cy+'px';
+    document.body.appendChild(dia);
+    const chip=document.getElementById('hDia');
+    const cr=chip.getBoundingClientRect();
+    requestAnimationFrame(()=>{
+      dia.style.left=(cr.left+cr.width/2)+'px';
+      dia.style.top=(cr.top+cr.height/2)+'px';
+      dia.style.opacity='0';
+      dia.style.transform='scale(.4)';
+    });
+    setTimeout(()=>{
+      dia.remove();
+      chip.parentElement.classList.remove('chipPulse'); void chip.parentElement.offsetWidth;
+      chip.parentElement.classList.add('chipPulse');
+    },660);
+    /* 콤보 배지 */
+    if(combo>=2){
+      const cb=document.getElementById('comboBadge');
+      cb.innerHTML='&#128293; '+combo+'연속 정답!';
+      cb.style.display='block';
+      cb.style.animation='none'; void cb.offsetWidth;
+      cb.style.animation='';
+      if(combo>=3) tone(880+combo*60,.1,'triangle',.06);
+    }
+  }catch(e){}
+}
 function recStat(w, ok){
   const s=S.stats[w]||(S.stats[w]={a:0,c:0});
   s.a++; if(ok) s.c++; save();
@@ -1836,12 +2031,17 @@ function pick(i,btn){
   if(ok){
     btn.classList.add('correct'); sfx.correct();
     Q.correct++; Q.dia+=2; Q.xp+=2; S.diamonds+=2; addXp(2); save();
+    Q.combo=(Q.combo||0)+1;
+    juiceCorrect(btn, Q.combo);
+    if(!Q.review) questProg('ans');
     if(Q.cur.speak && 'speechSynthesis' in window){
       try{ const u=new SpeechSynthesisUtterance(Q.cur.speak); u.lang='en-US'; u.rate=.9; speechSynthesis.speak(u); }catch(e){}
     }
     setTimeout(()=>{ Q.idx++; nextQ(); }, 750);
   } else {
     btn.classList.add('wrong'); sfx.wrong(); Q.lives--;
+    Q.combo=0;
+    document.getElementById('comboBadge').style.display='none';
     document.querySelectorAll('#quizOpts .opt').forEach((b,k)=>{ if(k===Q.cur.answerIndex) b.classList.add('correct'); });
     setTimeout(()=>{ Q.idx++; nextQ(); }, 1100);
   }
@@ -1855,6 +2055,7 @@ function finishQuiz(){
     const cur=S.stars[Q.world.id]||0;
     if(cur<3){ S.stars[Q.world.id]=cur+1; starGain=1; }
     sfx.star();
+    questProg('clear', Q.world.id);
   } else if(win){ sfx.star(); }
   save(); updateHud();
   const wIdx=WORLDS.findIndex(w=>w.id===Q.world.id);
@@ -1864,8 +2065,10 @@ function finishQuiz(){
     document.getElementById('resStars').innerHTML='&#128218;';
   } else {
     const got=S.stars[Q.world.id]||0;
-    document.getElementById('resStars').innerHTML =
-      '&#11088;'.repeat(got) + '<span style="opacity:.25">&#11088;</span>'.repeat(3-got);
+    let sh='';
+    for(let k=0;k<got;k++) sh+='<span class="resStar" style="animation-delay:'+(k*0.18)+'s">&#11088;</span>';
+    for(let k=got;k<3;k++) sh+='<span style="opacity:.25">&#11088;</span>';
+    document.getElementById('resStars').innerHTML=sh;
   }
   document.getElementById('resEarn').innerHTML =
     `${Q.review?'오답 복습':Q.lv.label} &nbsp;&#183;&nbsp; 정답 ${Q.correct} / ${Q.total} &nbsp;&#183;&nbsp; &#128142; +${Q.dia} &nbsp;&#183;&nbsp; XP +${Q.xp}`
@@ -1926,6 +2129,103 @@ function openSettings(){
   setOverlayEl.style.display='flex';
 }
 function closeSettings(){ setOverlayEl.style.display='none'; setOpen=false; }
+
+/* ============================================================
+   출석 보상 & 오늘의 퀘스트
+============================================================ */
+function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+const ATT_REWARDS=[10,15,20,25,30,40,60];
+function checkAttendance(){
+  if(!S.att) S.att={last:'',streak:0};
+  const today=todayStr();
+  if(S.att.last===today) return;
+  const y=new Date(); y.setDate(y.getDate()-1);
+  const yStr=y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0');
+  S.att.streak = (S.att.last===yStr) ? S.att.streak+1 : 1;
+  S.att.last=today;
+  const day=((S.att.streak-1)%7)+1;
+  const reward=ATT_REWARDS[day-1];
+  S.diamonds+=reward; save(); updateHud();
+  /* 출석 카드 표시 */
+  setOpen=true; joyEnd();
+  document.getElementById('attDay').innerText='연속 '+S.att.streak+'일째 출석 중!';
+  const dots=document.getElementById('attDots'); dots.innerHTML='';
+  for(let k=1;k<=7;k++){
+    const dd=document.createElement('div');
+    dd.className='attDot'+(k<day?' on':k===day?' today':'');
+    dd.innerHTML = k<=day ? '&#11088;' : k+'일';
+    dots.appendChild(dd);
+  }
+  document.getElementById('attReward').innerHTML='&#128142; +'+reward;
+  document.getElementById('attOverlay').style.display='flex';
+  sfx.star();
+}
+document.getElementById('attOk').onclick=()=>{
+  sfx.click();
+  document.getElementById('attOverlay').style.display='none';
+  setOpen=false;
+};
+function ensureQuests(){
+  if(!S.dq || S.dq.date!==todayStr()){
+    const w=WORLDS[Math.floor(Math.random()*WORLDS.length)];
+    S.dq={ date:todayStr(), list:[
+      {id:'ans',   label:'문제 15개 맞히기',        goal:15, cur:0, done:false, reward:20},
+      {id:'clear', label:w.name+' 클리어하기',      goal:1,  cur:0, done:false, reward:25, world:w.id},
+      {id:'chest', label:'보물상자 1개 열기',       goal:1,  cur:0, done:false, reward:15}
+    ]};
+    save();
+  }
+  updateQuestChip();
+}
+function updateQuestChip(){
+  const el=document.getElementById('hQuestN');
+  if(!el || !S.dq) return;
+  const done=S.dq.list.filter(q=>q.done).length;
+  el.innerText=done+'/'+S.dq.list.length;
+}
+function questProg(kind, worldId){
+  if(!started) return;
+  ensureQuests();
+  S.dq.list.forEach(q=>{
+    if(q.done) return;
+    if((q.id==='ans'&&kind==='ans') || (q.id==='chest'&&kind==='chest') ||
+       (q.id==='clear'&&kind==='clear'&&q.world===worldId)) q.cur++;
+    if(q.cur>=q.goal){
+      q.done=true;
+      S.diamonds+=q.reward;
+      updateHud();
+      toast('퀘스트 완료! '+q.label+' &#128142;+'+q.reward);
+      sfx.star();
+    }
+  });
+  save(); updateQuestChip();
+}
+function openQuests(){
+  sfx.click(); ensureQuests();
+  setOpen=true; joyEnd();
+  const list=document.getElementById('questList');
+  list.innerHTML='';
+  S.dq.list.forEach(q=>{
+    const row=document.createElement('div'); row.className='shopRow';
+    row.innerHTML=`<div class="ic">${q.done?'&#9989;':'&#128220;'}</div>
+      <div class="info"><div class="nm" ${q.done?'style="color:#1c7a47;"':''}>${q.label}</div>
+      <div class="ds">${q.done?'완료! 보상 받음':q.cur+' / '+q.goal}</div>
+      ${q.done?'':'<div class="qBar"><i style="width:'+Math.min(100,q.cur/q.goal*100)+'%"></i></div>'}</div>
+      <div style="color:var(--dia);font-size:15px;white-space:nowrap;">&#128142; ${q.reward}</div>`;
+    list.appendChild(row);
+  });
+  const tip=document.createElement('div');
+  tip.style.cssText='text-align:center;color:var(--sub);font-size:13px;font-weight:normal;margin-top:6px;';
+  tip.innerText='매일 자정에 새로운 퀘스트가 나와요';
+  list.appendChild(tip);
+  document.getElementById('questOverlay').style.display='flex';
+}
+document.getElementById('questClose').onclick=()=>{
+  sfx.click();
+  document.getElementById('questOverlay').style.display='none';
+  setOpen=false;
+};
+document.getElementById('hQuestChip').onclick=()=>{ if(started && !quizOpen && !shopOpen) openQuests(); };
 
 /* ============================================================
    자체 대화상자 (전체화면에서 브라우저 prompt/confirm이 차단되므로)
@@ -2153,6 +2453,7 @@ function enterTitle(){
 function logout(){
   save();
   ROOT.session=null; save();
+  toast((S.name||'')+' 내일 또 만나요!');
   showLogin();
 }
 async function doLogin(){
@@ -2204,6 +2505,7 @@ document.getElementById('verTag2').onclick=admTapCount;
 /* 시작: 인증 이관 후 세션 유지 시 자동 로그인 */
 (async function initAuth(){
   await ensureAuth();
+  syncSound();
   const idx=ROOT.session ? ROOT.profiles.findIndex(p=>p.loginId===ROOT.session) : -1;
   if(idx>=0){
     ROOT.active=idx; S=normalizeProfile(ROOT.profiles[idx]); save();
@@ -2211,7 +2513,17 @@ document.getElementById('verTag2').onclick=admTapCount;
   } else {
     showLogin();
   }
+  /* 로딩 화면 종료 */
+  const ls=document.getElementById('loadScreen');
+  document.querySelector('#loadScreen .loadTip').innerText='모험 준비 완료!';
+  setTimeout(()=>{ ls.classList.add('done'); setTimeout(()=>ls.remove(),600); },350);
 })();
+/* PWA 서비스워커 등록 (홈 화면 설치 + 오프라인) */
+if('serviceWorker' in navigator && location.protocol==='https:'){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
 
 function backToTitle(){
   closeSettings();
@@ -2254,6 +2566,11 @@ function renderSettings(){
       <button class="sBtn" id="btnReview" style="flex:1;">&#128218; 오답 복습 (${S.wrongs.length})</button>
       <button class="sBtn" id="btnTitle" style="flex:1;">&#128100; 프로필 &#183; 캐릭터 변경</button>
     </div>
+    <div style="font-size:17px;margin:16px 0 8px;">사운드</div>
+    <div style="display:flex;gap:8px;">
+      <button class="tog ${(!ROOT.sound||ROOT.sound.bgm!==false)?'on':'off'}" id="togBgm" style="flex:1;">배경음악 ${(!ROOT.sound||ROOT.sound.bgm!==false)?'켬':'끔'}</button>
+      <button class="tog ${(!ROOT.sound||ROOT.sound.sfx!==false)?'on':'off'}" id="togSfx" style="flex:1;">효과음 ${(!ROOT.sound||ROOT.sound.sfx!==false)?'켬':'끔'}</button>
+    </div>
     <div style="font-size:17px;margin:16px 0 8px;">세이브 관리</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="sBtn" id="btnExport" style="flex:1;">내보내기</button>
@@ -2263,6 +2580,16 @@ function renderSettings(){
     <div id="setFooter" style="text-align:center;color:var(--sub);font-size:13px;font-weight:normal;margin-top:16px;">
       ${S.name||'프로필'} &#183; 별빛 학습 퀘스트 3D v${VERSION} &#183; 세이브 v${ROOT.ver} &#183; 프로필 ${ROOT.active+1}/${ROOT.profiles.length}</div>`;
   document.getElementById('setFooter').onclick=admTapCount;
+  document.getElementById('togBgm').onclick=()=>{
+    if(!ROOT.sound) ROOT.sound={bgm:true,sfx:true};
+    ROOT.sound.bgm=!(ROOT.sound.bgm!==false);
+    save(); syncSound(); renderSettings(); sfx.click();
+  };
+  document.getElementById('togSfx').onclick=()=>{
+    if(!ROOT.sound) ROOT.sound={bgm:true,sfx:true};
+    ROOT.sound.sfx=!(ROOT.sound.sfx!==false);
+    save(); syncSound(); renderSettings();
+  };
   document.getElementById('btnReview').onclick=()=>{ sfx.click(); startReview(); };
   document.getElementById('btnTitle').onclick=()=>{ sfx.click(); backToTitle(); };
   document.getElementById('btnExport').onclick=exportSave;
@@ -2522,6 +2849,9 @@ document.getElementById('startBtn').onclick=()=>{
   joyShow();
   requestWakeLock();
   started=true; updateHud();
+  syncSound();
+  ensureQuests();
+  setTimeout(checkAttendance, 600);
   toast('조이스틱으로 움직여서 정령을 찾아가세요!');
 };
 updateHud();
