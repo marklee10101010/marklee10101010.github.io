@@ -218,11 +218,22 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d1630;
     <div id="setBody"></div>
   </div>
 </div>
+<div id="profOverlay" style="position:fixed;inset:0;z-index:33;background:rgba(13,22,48,.55);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:var(--card);border-radius:26px;width:min(420px,94vw);max-height:88vh;overflow-y:auto;padding:22px;box-shadow:0 24px 60px rgba(0,0,0,.4);animation:pop .3s;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div style="font-size:21px;">&#128100; 프로필 전환</div>
+      <button id="profClose" style="background:none;border:none;font-size:22px;color:var(--sub);font-family:inherit;">&#10005;</button>
+    </div>
+    <div id="profList"></div>
+  </div>
+</div>
+
 <input type="file" id="importFile" accept=".json,application/json" style="display:none;">
 
 <div class="hud" id="hudTop" style="display:none;">
-  <div class="chip">
+  <div class="chip" id="hProfChip" style="cursor:pointer;">
     <span id="hName" style="font-size:15px;"></span>
+    <span style="font-size:10px;opacity:.7;">&#9662;</span>
     <span class="lv" id="hLv">Lv.1</span>
     <div class="xpbar"><i id="hXp"></i></div>
   </div>
@@ -406,7 +417,7 @@ const WORLDS=[
 /* ============================================================
    버전 / 멀티 프로필 저장
 ============================================================ */
-const VERSION='2.2.0';
+const VERSION='2.3.0';
 const SAVE_VER=3;
 const SAVE_KEY='starlight3d_mp';
 const MAX_PROFILES=4;
@@ -1827,6 +1838,67 @@ function openSettings(){
   setOverlayEl.style.display='flex';
 }
 function closeSettings(){ setOverlayEl.style.display='none'; setOpen=false; }
+
+/* ============================================================
+   게임 중 프로필 빠른 전환 (HUD 이름 칩)
+============================================================ */
+const profOverlayEl=document.getElementById('profOverlay');
+function openProfSwitch(){
+  sfx.click(); setOpen=true; joyEnd();
+  renderProfSwitch();
+  profOverlayEl.style.display='flex';
+}
+function closeProfSwitch(){ profOverlayEl.style.display='none'; setOpen=false; }
+document.getElementById('profClose').onclick=()=>{ sfx.click(); closeProfSwitch(); };
+document.getElementById('hProfChip').onclick=()=>{ if(started && !quizOpen && !shopOpen) openProfSwitch(); };
+function renderProfSwitch(){
+  const list=document.getElementById('profList');
+  list.innerHTML='';
+  ROOT.profiles.forEach((p,i)=>{
+    const cur = i===ROOT.active;
+    const st=Object.values(p.stars||{}).reduce((a,b)=>a+b,0);
+    const row=document.createElement('div'); row.className='shopRow';
+    if(cur) row.style.cssText+='background:#FFF7E0;border:2px solid var(--gold);';
+    row.style.cursor='pointer';
+    row.innerHTML=`<img src="${PREVIEWS[p.charIdx||0]||''}" style="width:40px;height:48px;flex-shrink:0;">
+      <div class="info"><div class="nm">${p.name||'프로필 '+(i+1)}${cur?' <span style="font-size:12px;color:#b8860b;">지금 플레이 중</span>':''}</div>
+      <div class="ds">Lv.${p.level||1} &#183; &#11088; ${st} &#183; &#128142; ${p.diamonds||0}</div></div>`;
+    row.onclick=()=>applyProfile(i);
+    list.appendChild(row);
+  });
+  if(ROOT.profiles.length<MAX_PROFILES){
+    const add=document.createElement('button'); add.className='sBtn';
+    add.style.cssText='width:100%;margin-top:2px;';
+    add.innerHTML='+ 새 프로필 만들기';
+    add.onclick=()=>{
+      sfx.click();
+      ROOT.profiles.push(defaultProfile());
+      switchProfile(ROOT.profiles.length-1);
+      closeProfSwitch(); backToTitle();
+      toast('새 프로필의 이름과 캐릭터를 정해 주세요');
+    };
+    list.appendChild(add);
+  }
+  const manage=document.createElement('button'); manage.className='sBtn';
+  manage.style.cssText='width:100%;margin-top:8px;background:#EDF1F8;color:var(--sub);box-shadow:0 3px 0 #cfd7e6;';
+  manage.innerHTML='프로필 관리 (시작 화면으로)';
+  manage.onclick=()=>{ sfx.click(); closeProfSwitch(); backToTitle(); };
+  list.appendChild(manage);
+}
+function applyProfile(i){
+  sfx.click();
+  if(i===ROOT.active){ closeProfSwitch(); return; }
+  switchProfile(i);
+  closeProfSwitch();
+  if(!S.name){ backToTitle(); toast('이 프로필의 이름과 캐릭터를 정해 주세요'); return; }
+  /* 게임 중 즉시 적용 */
+  setPlayerChar(S.charIdx||0, S.name);
+  setCompanion();
+  WORLDS.forEach((w,k)=>refreshBeacon(k));
+  document.getElementById('hName').innerText=S.name;
+  updateHud();
+  toast(S.name+'(으)로 전환했어요!');
+}
 function backToTitle(){
   closeSettings();
   started=false;
