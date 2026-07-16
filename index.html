@@ -223,6 +223,32 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d1630;
   .opt{padding:10px 8px;min-height:48px;font-size:clamp(15px,3vh,19px);}
   #joyBase{width:96px;height:96px;bottom:calc(18px + env(safe-area-inset-bottom));}
 }
+/* ---------- 반응형: 가로 모드 퀴즈 2열 배치 ---------- */
+@media (orientation:landscape) and (max-height:560px){
+  #quizCard{max-height:97vh;padding:10px 16px 12px;}
+  #quizBody{display:grid;grid-template-columns:auto 1fr;column-gap:18px;align-items:center;
+    grid-template-areas:"head head" "vis prompt" "vis opts";}
+  #quizHead{grid-area:head;margin-bottom:4px;}
+  #quizVisual{grid-area:vis;margin:0;display:flex;flex-direction:column;align-items:center;gap:4px;}
+  #quizVisual:empty{display:none;}
+  #quizPrompt{grid-area:prompt;margin:2px 4px 8px;}
+  #quizOpts{grid-area:opts;}
+  /* 행맨 축소 */
+  #hgFig svg{width:92px !important;height:82px !important;}
+  #hgSpeak{padding:7px 14px;font-size:14px;margin:2px 0;}
+  .hgHint{font-size:13px;margin-top:0;}
+  #hgBlanks{margin:0 0 2px;gap:6px;}
+  .hgSlot{width:24px;height:30px;font-size:18px;border-bottom-width:3px;}
+  #hgKeys{grid-template-columns:repeat(9,1fr);gap:4px;margin-top:2px;}
+  .hgKey{padding:5px 0;font-size:13px;border-radius:8px;}
+  /* 시계/분수 그림도 축소 */
+  .clockFace{width:104px;height:104px;}
+  .fracSvg{width:96px;height:96px;}
+  .opt{padding:8px 8px;min-height:42px;font-size:clamp(14px,3vh,17px);}
+  #resultBox .big{font-size:26px;}
+  #resultBox .starRow{font-size:30px;margin:4px 0;}
+}
+
 /* ---------- 반응형: 시작 화면 낮은 높이 ---------- */
 @media (max-height:640px){
   #startScreen{justify-content:flex-start;}
@@ -564,7 +590,7 @@ const WORLDS=[
 /* ============================================================
    버전 / 멀티 프로필 저장
 ============================================================ */
-const VERSION='3.1.1';
+const VERSION='3.1.2';
 const SAVE_VER=3;
 const SAVE_KEY='starlight3d_mp';
 const MAX_PROFILES=4;
