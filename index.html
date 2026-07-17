@@ -30,6 +30,23 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d1630;
 .xpbar i{display:block;height:100%;background:linear-gradient(90deg,#9be15d,#00e3ae);border-radius:99px;width:0%;transition:width .4s;}
 .chip .num{font-size:16px;}
 #hudTopRight{display:flex;gap:8px;}
+/* 좁은 화면: 칩 축소 + 오른쪽 그룹 가로 스크롤 허용 (잘림 방지) */
+@media (max-width:520px){
+  #hudTop{padding:8px 8px;padding-top:calc(8px + env(safe-area-inset-top));gap:6px;}
+  .chip{padding:6px 9px;border-radius:13px;gap:5px;}
+  .chip .num{font-size:14px;}
+  .chip .lv{font-size:11px;padding:1px 6px;}
+  .xpbar{width:52px;height:7px;}
+  #hName{font-size:13px !important;}
+  #hudTopRight{gap:5px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+    max-width:62vw;justify-content:flex-end;flex-wrap:nowrap;}
+  #hudTopRight::-webkit-scrollbar{display:none;}
+  #hudTopRight .chip{flex-shrink:0;}
+}
+@media (max-width:380px){
+  .xpbar{display:none;}
+  .chip{padding:5px 8px;}
+}
 
 #zoneBanner{position:fixed;top:calc(64px + env(safe-area-inset-top));left:50%;transform:translateX(-50%) translateY(-8px);
   background:rgba(30,42,74,.85);color:#fff;padding:8px 20px;border-radius:99px;font-size:16px;
@@ -1219,7 +1236,11 @@ const CHARS=[
  {label:'숲 탐험가',   skin:0xE8B98C, hair:0x3C2F23, shirt:0x57A05B, pants:0x6E4C36, style:'short',    hat:'cap',     backpack:true },
  {label:'별 마법사',   skin:0xF3C79E, hair:0x8A8F9C, shirt:0x9B6BF2, pants:0x5D3F96, style:'short',    hat:'wizard',  backpack:false},
  {label:'노을 기사',   skin:0xD9A06B, hair:0x2C2C34, shirt:0xF2A93B, pants:0x8A5A2E, style:'ponytail', hat:'none',    backpack:false},
- {label:'하늘 우주인', skin:0xF3C79E, hair:0x6E4C36, shirt:0x39C6C0, pants:0x2A8A86, style:'short',    hat:'antenna', backpack:true }
+ {label:'하늘 우주인', skin:0xF3C79E, hair:0x6E4C36, shirt:0x39C6C0, pants:0x2A8A86, style:'short',    hat:'antenna', backpack:true },
+ {label:'노랑 라이더',  skin:0xF3C79E, hair:0x241F1A, shirt:0xF7C531, pants:0x2E3A55, style:'short',    hat:'helmet',  hatColor:0xF2F2EE, backpack:false},
+ {label:'체크무늬 소년',skin:0xF3C79E, hair:0x241F1A, shirt:0x8FB4E8, pants:0xE8D48A, style:'short',    hat:'none',    backpack:false},
+ {label:'빨강 헬멧 소녀',skin:0xF8D6B8, hair:0x2A211C, shirt:0xF7C531, pants:0xF2EFE8, style:'pigtails', hat:'helmet',  hatColor:0xE04848, backpack:false},
+ {label:'꽃무늬 소녀',  skin:0xF8D6B8, hair:0x2A211C, shirt:0xF2E4D4, pants:0xE8A7B8, style:'pigtails', hat:'ribbon',  backpack:false}
 ];
 function darken(c,f){ const col=new THREE.Color(c); col.multiplyScalar(f); return col.getHex(); }
 function buildCharacter(cfg){
@@ -1277,6 +1298,13 @@ function buildCharacter(cfg){
     const back=new THREE.Mesh(new THREE.BoxGeometry(.74,.3,.14), hairM); back.position.set(0,2.02,-.28); g.add(back);
     const knot=new THREE.Mesh(new THREE.SphereGeometry(.14,6,5), hairM); knot.position.set(0,2.18,-.38); g.add(knot);
     const tail=new THREE.Mesh(new THREE.BoxGeometry(.16,.6,.16), hairM); tail.position.set(0,1.86,-.46); tail.rotation.x=.25; g.add(tail);
+  } else if(cfg.style==='pigtails'){
+    const back=new THREE.Mesh(new THREE.BoxGeometry(.74,.34,.14), hairM); back.position.set(0,2.0,-.28); g.add(back);
+    for(const sx of [-1,1]){
+      const knot=new THREE.Mesh(new THREE.SphereGeometry(.11,6,5), hairM); knot.position.set(sx*.4,2.14,-.08); g.add(knot);
+      const tail=new THREE.Mesh(new THREE.BoxGeometry(.14,.44,.14), hairM);
+      tail.position.set(sx*.46,1.9,-.1); tail.rotation.z=sx*-.3; g.add(tail);
+    }
   }
 
   /* 모자 / 액세서리 */
@@ -1291,6 +1319,15 @@ function buildCharacter(cfg){
     const rL=new THREE.Mesh(new THREE.BoxGeometry(.2,.16,.08), mat(0xE25555)); rL.position.set(-.32,2.3,.1); rL.rotation.z=.5; g.add(rL);
     const rR=rL.clone(); rR.rotation.z=-.5; rR.position.x=-.18; g.add(rR);
     const rC=new THREE.Mesh(new THREE.BoxGeometry(.09,.09,.09), mat(0xB33A3A)); rC.position.set(-.25,2.3,.1); g.add(rC);
+  } else if(cfg.hat==='helmet'){
+    const hcol=cfg.hatColor||0xF2F2EE;
+    const hm=new THREE.Mesh(new THREE.SphereGeometry(.46,8,6), mat(hcol));
+    hm.position.y=2.2; hm.scale.set(1,.8,1.06); g.add(hm);
+    const visor=new THREE.Mesh(new THREE.BoxGeometry(.42,.06,.22), mat(darken(hcol,.72)));
+    visor.position.set(0,2.1,.4); g.add(visor);
+    const strapL=new THREE.Mesh(new THREE.BoxGeometry(.05,.3,.05), mat(darken(hcol,.6)));
+    strapL.position.set(-.3,1.85,.12); g.add(strapL);
+    const strapR=strapL.clone(); strapR.position.x=.3; g.add(strapR);
   } else if(cfg.hat==='antenna'){
     const rod=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.4,5), mat(0x8a8f9c)); rod.position.y=2.5; g.add(rod);
     const ball=new THREE.Mesh(new THREE.SphereGeometry(.09,6,5), new THREE.MeshLambertMaterial({color:0xFFD35C, emissive:0xFFD35C, emissiveIntensity:.6})); ball.position.y=2.72; g.add(ball);
