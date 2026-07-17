@@ -1703,10 +1703,18 @@ function drawFrom(key, arr){
   }
   return arr[d.pop()];
 }
-function numOpts(ans, spread, unit=''){
+function numOpts(ans, spread, unit='', step=1){
   const set=new Set([ans]);
+  const maxK=Math.max(1, Math.floor(spread/step));
+  let guard=0;
+  while(set.size<4 && guard++<200){
+    const k=Math.floor(Math.random()*maxK*2)-maxK; /* -maxK ~ +maxK */
+    const v=ans + k*step;
+    if(v>0 && v!==ans) set.add(v);
+  }
+  /* 보험: step으로 4개를 못 채우면 1단위로 채움 */
   while(set.size<4){
-    let v=ans + (Math.floor(Math.random()*spread*2)-spread);
+    const v=ans + (Math.floor(Math.random()*spread*2)-spread);
     if(v>0 && v!==ans) set.add(v);
   }
   const arr=shuffle([...set]);
@@ -1820,14 +1828,14 @@ const GEN={
       const chosen=shuffle(MARKET_ITEMS).slice(0,count);
       const total=chosen.reduce((s,i)=>s+i.price,0);
       const vis=chosen.map(i=>`<span style="font-size:44px">${i.icon}</span><span style="font-size:17px;color:#6B7A99"> ${i.price}원 </span>`).join(' ');
-      return { prompt:'모두 얼마일까요?', visual:`<div>${vis}</div>`, ...numOpts(total,300,'원') };
+      return { prompt:'모두 얼마일까요?', visual:`<div>${vis}</div>`, ...numOpts(total,400,'원',100) };
     } else {
       const item=shuffle(MARKET_ITEMS.filter(i=>i.price<=1000))[0];
       const payOptions=[1000,2000,5000].filter(p=>p>item.price);
       const pay=payOptions[Math.floor(Math.random()*payOptions.length)];
       const change=pay-item.price;
       return { prompt:`${item.name}(${item.price}원)를 사고 <b>${pay}원</b>을 냈어요.<br>거스름돈은?`,
-        visual:`<span style="font-size:48px">${item.icon}</span>`, ...numOpts(change,400,'원') };
+        visual:`<span style="font-size:48px">${item.icon}</span>`, ...numOpts(change,500,'원',100) };
     }
   },
   calc(p){ /* 연산 (원본 genCalcQ 이식, p=난이도) */
