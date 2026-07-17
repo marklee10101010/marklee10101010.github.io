@@ -107,7 +107,14 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d1630;
   padding:12px 18px;font-family:inherit;font-size:20px;color:#fff;text-align:center;width:min(280px,80vw);outline:none;}
 #nameInput:focus{border-color:var(--gold);}
 #nameInput::placeholder{color:#8fa3cf;}
-#charRow{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:18px 0 24px;max-width:600px;}
+#charRow{display:flex;gap:10px;flex-wrap:nowrap;justify-content:flex-start;margin:14px 0 6px;
+  max-width:min(92vw,620px);overflow-x:auto;scroll-snap-type:x proximity;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;padding:6px 12px;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 24px,#000 calc(100% - 24px),transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 24px,#000 calc(100% - 24px),transparent);}
+#charRow::-webkit-scrollbar{display:none;}
+#charRow .charCard{flex-shrink:0;scroll-snap-align:center;}
+.swipeHint{color:#8fa3cf;font-size:13px;font-weight:normal;margin-bottom:14px;}
 .charCard{background:rgba(255,255,255,.08);border:3px solid rgba(255,255,255,.18);border-radius:18px;
   padding:6px 4px 8px;width:92px;cursor:pointer;transition:transform .15s;}
 .charCard:active{transform:scale(.94);}
@@ -272,7 +279,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d1630;
   #startScreen h1{font-size:min(6vw,30px) !important;}
   .charCard{width:76px;}
   .charCard img{width:62px;height:72px;}
-  #charRow{margin:10px 0 14px;gap:8px;}
+  #charRow{margin:8px 0 4px;gap:8px;}
   #startBtn{padding:12px 40px;font-size:19px;}
 }
 /* ---------- 상점 ---------- */
@@ -331,6 +338,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d1630;
   <p style="margin:8px 0 6px;" id="startHello">이름을 정하고 캐릭터를 골라 주세요</p>
   <input id="nameInput" maxlength="8" placeholder="이름 (최대 8글자)">
   <div id="charRow"></div>
+  <div class="swipeHint">&#8596; 옆으로 넘겨서 캐릭터를 더 볼 수 있어요</div>
   <button id="startBtn">모험 시작</button>
   <div id="verTag" style="margin-top:8px;color:#5f74a8;font-size:13px;font-weight:normal;padding:12px 20px;"></div>
 </div>
@@ -2892,7 +2900,12 @@ if('serviceWorker' in navigator && location.protocol==='https:'){
 function syncTitleInputs(){
   document.getElementById('nameInput').value=S.name||'';
   selChar=S.charIdx||0;
-  document.querySelectorAll('.charCard').forEach((el,i)=>el.classList.toggle('sel', i===selChar));
+  const cards=document.querySelectorAll('.charCard');
+  cards.forEach((el,i)=>el.classList.toggle('sel', i===selChar));
+  const selEl=cards[selChar];
+  if(selEl && selEl.scrollIntoView){
+    try{ selEl.scrollIntoView({block:'nearest', inline:'center', behavior:'instant'}); }catch(e){}
+  }
   document.getElementById('verTag').innerText='v'+VERSION+' · 프로필 '+ROOT.profiles.length+'개';
 }
 document.getElementById('startBtn').onclick=()=>{
