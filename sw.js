@@ -1,5 +1,5 @@
 /* 별빛 학습 퀘스트 3D - 오프라인 서비스워커 */
-const CACHE='starquest-v3.4.1';
+const CACHE='starquest-v3.4.2';
 const CORE=[
   './',
   './index.html',
