@@ -618,7 +618,7 @@ const WORLDS=[
 /* ============================================================
    버전 / 멀티 프로필 저장
 ============================================================ */
-const VERSION='3.6.0';
+const VERSION='3.7.0';
 const SAVE_VER=3;
 const SAVE_KEY='starlight3d_mp';
 const MAX_PROFILES=4;
@@ -882,11 +882,21 @@ const SHOP_POS={x:6.5,z:-6.5};
 
 /* --- 펫 시스템 --- */
 const PET_TYPES=[
- {id:'chick',  name:'병아리',      price:30,  feeds:3, icon:'&#128036;', egg:0xFFE066},
- {id:'puppy',  name:'강아지',      price:50,  feeds:4, icon:'&#128054;', egg:0xC9A075},
- {id:'cat',    name:'고양이',      price:50,  feeds:4, icon:'&#128049;', egg:0xB8C4D8},
- {id:'rabbit', name:'토끼',        price:70,  feeds:5, icon:'&#128048;', egg:0xF5E8EE},
- {id:'dragon', name:'아기 드래곤', price:150, feeds:8, icon:'&#128050;', egg:0x8FE0A0}
+ {id:'chick',   name:'병아리',      price:30,  feeds:3, icon:'&#128036;', egg:0xFFE066},
+ {id:'duck',    name:'오리',        price:35,  feeds:3, icon:'&#129414;', egg:0xFFF0C0},
+ {id:'puppy',   name:'강아지',      price:50,  feeds:4, icon:'&#128054;', egg:0xC9A075},
+ {id:'cat',     name:'고양이',      price:50,  feeds:4, icon:'&#128049;', egg:0xB8C4D8},
+ {id:'rabbit',  name:'토끼',        price:70,  feeds:5, icon:'&#128048;', egg:0xF5E8EE},
+ {id:'panda',   name:'판다',        price:90,  feeds:5, icon:'&#128060;', egg:0xE8E8E8},
+ {id:'fox',     name:'여우',        price:85,  feeds:5, icon:'&#129418;', egg:0xF0B070},
+ {id:'penguin', name:'펭귄',        price:80,  feeds:5, icon:'&#128039;', egg:0xC0D0E0},
+ {id:'frog',    name:'개구리',      price:60,  feeds:4, icon:'&#128056;', egg:0xB0E080},
+ {id:'pig',     name:'아기 돼지',   price:65,  feeds:4, icon:'&#128055;', egg:0xF5C0C8},
+ {id:'bear',    name:'곰',          price:100, feeds:6, icon:'&#128059;', egg:0xC49A6C},
+ {id:'dragon',  name:'아기 드래곤', price:150, feeds:8, icon:'&#128050;', egg:0x8FE0A0},
+ {id:'unicorn', name:'유니콘',      price:180, feeds:8, stars:10, icon:'&#129412;', egg:0xF0D0F0},
+ {id:'dino',    name:'공룡',        price:170, feeds:8, icon:'&#129429;', egg:0xA0E0B0},
+ {id:'phoenix', name:'불사조',      price:220, feeds:9, stars:14, icon:'&#128293;', egg:0xFFB060}
 ];
 function petType(id){ return PET_TYPES.find(t=>t.id===id); }
 function buildEgg(color){
@@ -965,6 +975,103 @@ function buildAnimal(id){
     const tail=new THREE.Mesh(new THREE.BoxGeometry(.14,.14,.5), mat(c)); tail.position.set(0,.5,-.5); tail.rotation.x=.3; g.add(tail);
     const tailTip=new THREE.Mesh(new THREE.ConeGeometry(.1,.2,4), mat(0xF5F0E0)); tailTip.position.set(0,.62,-.78); tailTip.rotation.x=-1.2; g.add(tailTip);
     out.tail=tail;
+  } else if(id==='duck'){
+    const c=0xFFE9A0;
+    const body=new THREE.Mesh(new THREE.SphereGeometry(.32,14,12), mat(c)); body.position.y=.42; body.scale.set(1,.9,1.05); g.add(body);
+    const head=new THREE.Mesh(new THREE.SphereGeometry(.22,14,12), mat(c)); head.position.set(0,.82,.08); g.add(head);
+    const beak=new THREE.Mesh(new THREE.BoxGeometry(.16,.06,.16), mat(0xF2A93B)); beak.position.set(0,.78,.3); g.add(beak);
+    eyes(.86,.2,.09);
+    for(const sx of [-1,1]){ const wing=new THREE.Mesh(new THREE.SphereGeometry(.16,8,7), mat(darken(c,.9))); wing.position.set(sx*.3,.42,0); wing.scale.set(.35,1,.8); g.add(wing); }
+    for(const sx of [-1,1]){ const foot=new THREE.Mesh(new THREE.BoxGeometry(.12,.05,.16), mat(0xF2A93B)); foot.position.set(sx*.13,.1,.05); g.add(foot); }
+  } else if(id==='panda'){
+    const body=new THREE.Mesh(new THREE.SphereGeometry(.34,14,12), mat(0xF2F2F2)); body.position.y=.44; body.scale.set(1,.95,.85); g.add(body);
+    const head=new THREE.Mesh(new THREE.SphereGeometry(.28,14,12), mat(0xF2F2F2)); head.position.set(0,.82,.34); g.add(head);
+    for(const sx of [-1,1]){ const ear=new THREE.Mesh(new THREE.SphereGeometry(.11,10,8), mat(0x2A2A2A)); ear.position.set(sx*.2,1.04,.32); g.add(ear); }
+    for(const sx of [-1,1]){ const patch=new THREE.Mesh(new THREE.SphereGeometry(.09,8,7), mat(0x2A2A2A)); patch.position.set(sx*.12,.82,.54); patch.scale.set(1,1.3,.4); g.add(patch); }
+    eyes(.84,.6,.12);
+    const nose=new THREE.Mesh(new THREE.SphereGeometry(.04,8,6), mat(0x2A2A2A)); nose.position.set(0,.74,.62); g.add(nose);
+    for(const [sx,sz] of [[-.2,.12],[.2,.12],[-.2,-.12],[.2,-.12]]){ const leg=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.2,8), mat(0x2A2A2A)); leg.position.set(sx,.1,sz); g.add(leg); }
+  } else if(id==='fox'){
+    const c=0xE8843C;
+    const body=new THREE.Mesh(new THREE.SphereGeometry(.32,14,12), mat(c)); body.position.y=.42; body.scale.set(1.05,.72,.78); g.add(body);
+    const head=new THREE.Mesh(new THREE.SphereGeometry(.25,14,12), mat(c)); head.position.set(0,.66,.42); g.add(head);
+    const snout=new THREE.Mesh(new THREE.ConeGeometry(.13,.24,10), mat(0xF2F2F2)); snout.rotation.x=Math.PI/2; snout.position.set(0,.6,.66); g.add(snout);
+    const nose=new THREE.Mesh(new THREE.SphereGeometry(.04,8,6), mat(0x2A2A2A)); nose.position.set(0,.6,.78); g.add(nose);
+    eyes(.72,.63,.12);
+    for(const sx of [-1,1]){ const ear=new THREE.Mesh(new THREE.ConeGeometry(.11,.26,5), mat(c)); ear.position.set(sx*.16,.94,.38); g.add(ear); const tip=new THREE.Mesh(new THREE.ConeGeometry(.06,.1,5), mat(0x2A2A2A)); tip.position.set(sx*.16,1.04,.38); g.add(tip); }
+    const tail=new THREE.Mesh(new THREE.ConeGeometry(.16,.5,10), mat(c)); tail.position.set(0,.5,-.5); tail.rotation.x=-1.2; g.add(tail); out.tail=tail;
+    const tailTip=new THREE.Mesh(new THREE.SphereGeometry(.1,8,7), mat(0xF2F2F2)); tailTip.position.set(0,.5,-.72); g.add(tailTip);
+    for(const [sx,sz] of [[-.2,.12],[.2,.12],[-.2,-.12],[.2,-.12]]){ const leg=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,.22,7), mat(0x8A4A28)); leg.position.set(sx,.11,sz); g.add(leg); }
+  } else if(id==='penguin'){
+    const body=new THREE.Mesh(new THREE.SphereGeometry(.32,14,12), mat(0x2E3A4A)); body.position.y=.48; body.scale.set(.85,1.1,.85); g.add(body);
+    const belly=new THREE.Mesh(new THREE.SphereGeometry(.24,12,10), mat(0xF2F2F2)); belly.position.set(0,.44,.16); belly.scale.set(.8,1.1,.5); g.add(belly);
+    const head=new THREE.Mesh(new THREE.SphereGeometry(.22,14,12), mat(0x2E3A4A)); head.position.set(0,.86,.02); g.add(head);
+    eyes(.9,.18,.09);
+    const beak=new THREE.Mesh(new THREE.ConeGeometry(.07,.16,6), mat(0xF2A93B)); beak.rotation.x=Math.PI/2; beak.position.set(0,.82,.24); g.add(beak);
+    for(const sx of [-1,1]){ const flip=new THREE.Mesh(new THREE.SphereGeometry(.14,8,7), mat(0x252F3D)); flip.position.set(sx*.32,.48,0); flip.scale.set(.3,1,.6); g.add(flip); }
+    for(const sx of [-1,1]){ const foot=new THREE.Mesh(new THREE.BoxGeometry(.12,.05,.18), mat(0xF2A93B)); foot.position.set(sx*.12,.1,.06); g.add(foot); }
+  } else if(id==='frog'){
+    const c=0x7BC86B;
+    const body=new THREE.Mesh(new THREE.SphereGeometry(.34,14,12), mat(c)); body.position.y=.36; body.scale.set(1.1,.85,1); g.add(body);
+    const belly=new THREE.Mesh(new THREE.SphereGeometry(.24,12,10), mat(0xD8F0B0)); belly.position.set(0,.28,.18); belly.scale.set(.9,.7,.5); g.add(belly);
+    for(const sx of [-1,1]){ const bump=new THREE.Mesh(new THREE.SphereGeometry(.14,10,8), mat(c)); bump.position.set(sx*.18,.6,.1); g.add(bump); const eye=new THREE.Mesh(new THREE.SphereGeometry(.07,10,8), mat(0x243044)); eye.position.set(sx*.18,.64,.2); g.add(eye); const gl=new THREE.Mesh(new THREE.SphereGeometry(.025,6,5), new THREE.MeshBasicMaterial({color:0xffffff})); gl.position.set(sx*.18+.02,.67,.24); g.add(gl); }
+    for(const [sx,sz] of [[-.28,.16],[.28,.16]]){ const leg=new THREE.Mesh(new THREE.SphereGeometry(.11,8,7), mat(darken(c,.9))); leg.position.set(sx,.14,sz); leg.scale.set(.7,.5,1.2); g.add(leg); }
+  } else if(id==='pig'){
+    const c=0xF2A6B8;
+    const body=new THREE.Mesh(new THREE.SphereGeometry(.34,14,12), mat(c)); body.position.y=.42; body.scale.set(1.05,.85,.9); g.add(body);
+    const head=new THREE.Mesh(new THREE.SphereGeometry(.26,14,12), mat(c)); head.position.set(0,.66,.4); g.add(head);
+    const snout=new THREE.Mesh(new THREE.CylinderGeometry(.11,.11,.1,10), mat(0xE890A5)); snout.rotation.x=Math.PI/2; snout.position.set(0,.6,.64); g.add(snout);
+    for(const sx of [-1,1]){ const n=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.06,6), mat(0xC06078)); n.rotation.x=Math.PI/2; n.position.set(sx*.04,.6,.7); g.add(n); }
+    eyes(.72,.62,.11);
+    for(const sx of [-1,1]){ const ear=new THREE.Mesh(new THREE.ConeGeometry(.1,.16,4), mat(c)); ear.position.set(sx*.16,.86,.36); ear.rotation.x=-.3; g.add(ear); }
+    const tail=new THREE.Mesh(new THREE.TorusGeometry(.06,.02,6,10), mat(c)); tail.position.set(0,.44,-.44); g.add(tail);
+    for(const [sx,sz] of [[-.18,.12],[.18,.12],[-.18,-.12],[.18,-.12]]){ const leg=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.2,8), mat(darken(c,.85))); leg.position.set(sx,.1,sz); g.add(leg); }
+  } else if(id==='bear'){
+    const c=0xB98A5E;
+    const body=new THREE.Mesh(new THREE.SphereGeometry(.36,14,12), mat(c)); body.position.y=.46; body.scale.set(1,.95,.9); g.add(body);
+    const head=new THREE.Mesh(new THREE.SphereGeometry(.28,14,12), mat(c)); head.position.set(0,.84,.32); g.add(head);
+    for(const sx of [-1,1]){ const ear=new THREE.Mesh(new THREE.SphereGeometry(.1,10,8), mat(c)); ear.position.set(sx*.2,1.06,.3); g.add(ear); }
+    const snout=new THREE.Mesh(new THREE.SphereGeometry(.13,10,8), mat(0xE8D8C0)); snout.position.set(0,.78,.56); snout.scale.set(1,.8,.7); g.add(snout);
+    const nose=new THREE.Mesh(new THREE.SphereGeometry(.045,8,6), mat(0x2A2A2A)); nose.position.set(0,.82,.66); g.add(nose);
+    eyes(.9,.56,.12);
+    for(const [sx,sz] of [[-.22,.14],[.22,.14],[-.22,-.14],[.22,-.14]]){ const leg=new THREE.Mesh(new THREE.CylinderGeometry(.11,.11,.2,8), mat(darken(c,.9))); leg.position.set(sx,.1,sz); g.add(leg); }
+  } else if(id==='unicorn'){
+    const c=0xF8F0FA;
+    const body=new THREE.Mesh(new THREE.SphereGeometry(.32,14,12), mat(c)); body.position.y=.46; body.scale.set(1.1,.85,.8); g.add(body);
+    const neck=new THREE.Mesh(new THREE.CylinderGeometry(.13,.16,.34,10), mat(c)); neck.position.set(0,.74,.28); neck.rotation.x=.5; g.add(neck);
+    const head=new THREE.Mesh(new THREE.SphereGeometry(.19,14,12), mat(c)); head.position.set(0,.94,.44); head.scale.set(.9,1,1.2); g.add(head);
+    const horn=new THREE.Mesh(new THREE.ConeGeometry(.05,.28,8), emat(0xFFD35C,.5)); horn.position.set(0,1.16,.46); horn.rotation.x=-.2; g.add(horn);
+    eyes(.96,.56,.09);
+    /* 무지개 갈기 */
+    const maneC=[0xF25A8A,0xF2A93B,0xFFE066,0x7BC86B,0x5AC8E8,0xA080E0];
+    for(let k=0;k<6;k++){ const m=new THREE.Mesh(new THREE.SphereGeometry(.07,8,6), mat(maneC[k])); m.position.set(0,1.0-k*.08,.28-k*.03); g.add(m); }
+    const tail=new THREE.Mesh(new THREE.SphereGeometry(.14,8,7), mat(maneC[2])); tail.position.set(0,.44,-.42); tail.scale.set(.6,1.3,.6); g.add(tail); out.tail=tail;
+    for(const [sx,sz] of [[-.16,.14],[.16,.14],[-.16,-.14],[.16,-.14]]){ const leg=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,.24,8), mat(c)); leg.position.set(sx,.12,sz); g.add(leg); }
+  } else if(id==='dino'){
+    const c=0x6BC85E;
+    const body=new THREE.Mesh(new THREE.SphereGeometry(.34,14,12), mat(c)); body.position.y=.5; body.scale.set(1,1,1.15); g.add(body);
+    const neck=new THREE.Mesh(new THREE.CylinderGeometry(.12,.16,.4,10), mat(c)); neck.position.set(0,.82,.24); neck.rotation.x=.4; g.add(neck);
+    const head=new THREE.Mesh(new THREE.SphereGeometry(.2,14,12), mat(c)); head.position.set(0,1.02,.42); head.scale.set(1,.9,1.2); g.add(head);
+    eyes(1.08,.58,.1);
+    for(let k=0;k<4;k++){ const plate=new THREE.Mesh(new THREE.ConeGeometry(.09,.18,4), mat(0xF2C84B)); plate.position.set(0,.78,.1-k*.18); g.add(plate); }
+    const tail=new THREE.Mesh(new THREE.ConeGeometry(.16,.5,8), mat(c)); tail.position.set(0,.5,-.5); tail.rotation.x=1.4; g.add(tail); out.tail=tail;
+    for(const [sx,sz] of [[-.2,.1],[.2,.1],[-.2,-.14],[.2,-.14]]){ const leg=new THREE.Mesh(new THREE.CylinderGeometry(.1,.1,.24,8), mat(darken(c,.9))); leg.position.set(sx,.12,sz); g.add(leg); }
+  } else if(id==='phoenix'){
+    const c=0xF2703A;
+    const body=new THREE.Mesh(new THREE.SphereGeometry(.3,14,12), mat(c)); body.position.y=.5; body.scale.set(.9,1.05,.9); g.add(body);
+    const head=new THREE.Mesh(new THREE.SphereGeometry(.2,14,12), mat(0xF2A93B)); head.position.set(0,.86,.06); g.add(head);
+    const beak=new THREE.Mesh(new THREE.ConeGeometry(.06,.16,6), mat(0xFFD35C)); beak.rotation.x=Math.PI/2; beak.position.set(0,.82,.26); g.add(beak);
+    eyes(.9,.16,.08);
+    /* 볏 */
+    for(let k=0;k<3;k++){ const cr=new THREE.Mesh(new THREE.ConeGeometry(.05,.18,5), emat([0xF25A3A,0xFFD35C,0xF2703A][k],.4)); cr.position.set((k-1)*.1,1.06,0); cr.rotation.z=(k-1)*.3; g.add(cr); }
+    /* 불꽃 날개 (피벗) */
+    out.wings=[];
+    for(const sx of [-1,1]){
+      const piv=new THREE.Group(); piv.position.set(sx*.22,.62,-.02);
+      for(let k=0;k<3;k++){ const fe=new THREE.Mesh(new THREE.ConeGeometry(.08,.4-k*.06,6), emat([0xF25A3A,0xF2A93B,0xFFD35C][k],.4)); fe.position.set(sx*(.15+k*.12),.05-k*.08,0); fe.rotation.z=sx*(1.4+k*.2); piv.add(fe); }
+      g.add(piv); out.wings.push({piv,sx});
+    }
+    const tail=new THREE.Mesh(new THREE.ConeGeometry(.12,.5,6), emat(0xFFD35C,.4)); tail.position.set(0,.4,-.44); tail.rotation.x=1.3; g.add(tail); out.tail=tail;
   }
   return out;
 }
@@ -1424,23 +1531,53 @@ function buildCharacter(cfg){
 
 /* --- 꾸미기 아이템 --- */
 const COSMETICS=[
- {id:'bow',     slot:'head', name:'나비 리본',  price:30,  icon:'&#127872;'},
- {id:'straw',   slot:'head', name:'밀짚모자',  price:40,  icon:'&#128087;'},
- {id:'starpin', slot:'head', name:'별 머리핀', price:50,  icon:'&#11088;'},
- {id:'crown',   slot:'head', name:'황금 왕관', price:150, stars:12, icon:'&#128081;'},
- {id:'cape',    slot:'back', name:'빨간 망토', price:80,  icon:'&#129464;'},
- {id:'sword',   slot:'back', name:'용사의 검', price:120, icon:'&#128481;&#65039;'},
- {id:'wings',   slot:'back', name:'천사 날개', price:100, stars:8, icon:'&#128330;'}
+ /* --- 머리 (head) --- */
+ {id:'bow',      slot:'head', name:'나비 리본',    price:30,  icon:'&#127872;'},
+ {id:'straw',    slot:'head', name:'밀짚모자',    price:40,  icon:'&#128087;'},
+ {id:'starpin',  slot:'head', name:'별 머리핀',   price:50,  icon:'&#11088;'},
+ {id:'party',    slot:'head', name:'고깔모자',    price:45,  icon:'&#127881;'},
+ {id:'headphone',slot:'head', name:'헤드폰',      price:70,  icon:'&#127911;'},
+ {id:'tophat',   slot:'head', name:'마술사 모자', price:90,  icon:'&#127913;'},
+ {id:'flower',   slot:'head', name:'꽃 화관',     price:60,  icon:'&#127800;'},
+ {id:'horns',    slot:'head', name:'악마 뿔',     price:80,  icon:'&#128520;'},
+ {id:'halo',     slot:'head', name:'천사 고리',   price:110, icon:'&#128519;'},
+ {id:'antler',   slot:'head', name:'사슴 뿔',     price:75,  icon:'&#129446;'},
+ {id:'chef',     slot:'head', name:'요리사 모자', price:55,  icon:'&#127859;'},
+ {id:'crown',    slot:'head', name:'황금 왕관',   price:150, stars:12, icon:'&#128081;'},
+ {id:'space',    slot:'head', name:'우주 헬멧',   price:200, stars:16, icon:'&#128760;'},
+ /* --- 얼굴 (face) --- */
+ {id:'glasses',  slot:'face', name:'동그란 안경', price:40,  icon:'&#128083;'},
+ {id:'shades',   slot:'face', name:'선글라스',    price:60,  icon:'&#128374;'},
+ {id:'mask',     slot:'face', name:'닌자 복면',   price:70,  icon:'&#129399;'},
+ {id:'snorkel',  slot:'face', name:'물안경',      price:50,  icon:'&#129718;'},
+ /* --- 등 (back) --- */
+ {id:'cape',     slot:'back', name:'빨간 망토',   price:80,  icon:'&#129464;'},
+ {id:'sword',    slot:'back', name:'용사의 검',   price:120, icon:'&#128481;&#65039;'},
+ {id:'wings',    slot:'back', name:'천사 날개',   price:100, stars:8, icon:'&#128330;'},
+ {id:'batwing',  slot:'back', name:'박쥐 날개',   price:110, icon:'&#129415;'},
+ {id:'jetpack',  slot:'back', name:'제트팩',      price:160, stars:10, icon:'&#128640;'},
+ {id:'shell',    slot:'back', name:'거북 등딱지', price:70,  icon:'&#128034;'},
+ {id:'backpack2',slot:'back', name:'모험 가방',   price:65,  icon:'&#127890;'},
+ {id:'balloon',  slot:'back', name:'풍선',        price:55,  icon:'&#127880;'},
+ {id:'fairywing',slot:'back', name:'요정 날개',   price:130, stars:9, icon:'&#129415;'},
+ /* --- 손 (hand) --- */
+ {id:'wand',     slot:'hand', name:'요술 지팡이', price:90,  icon:'&#129668;'},
+ {id:'shield',   slot:'hand', name:'방패',        price:100, icon:'&#128737;&#65039;'},
+ {id:'torch',    slot:'hand', name:'횃불',        price:75,  icon:'&#128293;'},
+ {id:'flag',     slot:'hand', name:'깃발',        price:50,  icon:'&#128681;'},
+ {id:'balloon2', slot:'hand', name:'하트 풍선',   price:60,  icon:'&#128156;'},
+ {id:'star_staff',slot:'hand',name:'별 지팡이',   price:140, stars:10, icon:'&#127775;'}
 ];
-const SLOT_NAME={head:'머리', back:'등'};
+const SLOT_NAME={head:'머리', face:'얼굴', back:'등', hand:'손'};
 const cosmeticAnims=[];
 function attachCosmetics(g){
   cosmeticAnims.length=0;
   const eq=S.equipped||{};
+  /* ---------- 머리 ---------- */
   if(eq.head==='straw'){
-    const top=new THREE.Mesh(new THREE.CylinderGeometry(.34,.36,.24,8), mat(0xE8CE8A)); top.position.y=2.46; g.add(top);
-    const brim=new THREE.Mesh(new THREE.CylinderGeometry(.62,.62,.06,10), mat(0xD9BC72)); brim.position.y=2.36; g.add(brim);
-    const band=new THREE.Mesh(new THREE.CylinderGeometry(.36,.37,.09,8), mat(0xE25555)); band.position.y=2.4; g.add(band);
+    const top=new THREE.Mesh(new THREE.CylinderGeometry(.34,.36,.24,10), mat(0xE8CE8A)); top.position.y=2.46; g.add(top);
+    const brim=new THREE.Mesh(new THREE.CylinderGeometry(.62,.62,.06,14), mat(0xD9BC72)); brim.position.y=2.36; g.add(brim);
+    const band=new THREE.Mesh(new THREE.CylinderGeometry(.36,.37,.09,10), mat(0xE25555)); band.position.y=2.4; g.add(band);
   } else if(eq.head==='bow'){
     const l=new THREE.Mesh(new THREE.BoxGeometry(.22,.18,.08), mat(0xE87BB0)); l.position.set(-.14,2.44,.06); l.rotation.z=.5; g.add(l);
     const r2=l.clone(); r2.position.x=.14; r2.rotation.z=-.5; g.add(r2);
@@ -1448,17 +1585,57 @@ function attachCosmetics(g){
   } else if(eq.head==='starpin'){
     const st=new THREE.Mesh(new THREE.OctahedronGeometry(.14,0), emat(0xFFD35C,.6)); st.position.set(.28,2.34,.2); g.add(st);
     cosmeticAnims.push(t=>{ st.rotation.y=t*2; });
-  } else if(eq.head==='crown'){
-    const base=new THREE.Mesh(new THREE.CylinderGeometry(.3,.32,.2,8), emat(0xFFD35C,.4)); base.position.y=2.48; g.add(base);
-    for(let k=0;k<4;k++){
-      const sp=new THREE.Mesh(new THREE.ConeGeometry(.07,.18,4), emat(0xFFD35C,.4));
-      sp.position.set(Math.cos(k*Math.PI/2)*.26,2.64,Math.sin(k*Math.PI/2)*.26); g.add(sp);
+  } else if(eq.head==='party'){
+    const cone=new THREE.Mesh(new THREE.ConeGeometry(.32,.7,12), emat(0xE87BB0,.15)); cone.position.y=2.7; g.add(cone);
+    for(let k=0;k<3;k++){ const dot=new THREE.Mesh(new THREE.SphereGeometry(.05,8,6), mat([0xFFD35C,0x5AC8E8,0x9BE15D][k])); dot.position.set(0,2.5+k*.15,.3); g.add(dot); }
+    const ball=new THREE.Mesh(new THREE.SphereGeometry(.09,8,7), mat(0xFFD35C)); ball.position.y=3.06; g.add(ball);
+  } else if(eq.head==='headphone'){
+    const band=new THREE.Mesh(new THREE.TorusGeometry(.42,.05,8,16,Math.PI), mat(0x2E3A55)); band.position.y=2.3; g.add(band);
+    for(const sx of [-1,1]){ const cup=new THREE.Mesh(new THREE.CylinderGeometry(.13,.13,.12,12), mat(0x5A8DEE)); cup.rotation.z=Math.PI/2; cup.position.set(sx*.42,2.0,0); g.add(cup); }
+  } else if(eq.head==='tophat'){
+    const brim=new THREE.Mesh(new THREE.CylinderGeometry(.52,.52,.06,16), mat(0x2A2438)); brim.position.y=2.38; g.add(brim);
+    const top=new THREE.Mesh(new THREE.CylinderGeometry(.34,.34,.7,16), mat(0x2A2438)); top.position.y=2.74; g.add(top);
+    const band=new THREE.Mesh(new THREE.CylinderGeometry(.35,.35,.12,16), mat(0xE25555)); band.position.y=2.48; g.add(band);
+  } else if(eq.head==='flower'){
+    for(let k=0;k<6;k++){ const a=k*Math.PI/3; const fl=new THREE.Mesh(new THREE.SphereGeometry(.1,8,6), mat([0xF2A6C0,0xFFD35C,0xF5F0F2][k%3])); fl.position.set(Math.cos(a)*.38,2.4,Math.sin(a)*.38); fl.scale.y=.6; g.add(fl); }
+  } else if(eq.head==='horns'){
+    for(const sx of [-1,1]){ const h=new THREE.Mesh(new THREE.ConeGeometry(.1,.32,8), mat(0xC0392B)); h.position.set(sx*.24,2.5,0); h.rotation.z=sx*-.3; g.add(h); }
+  } else if(eq.head==='halo'){
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(.26,.05,8,20), emat(0xFFE680,.7)); ring.rotation.x=Math.PI/2; ring.position.y=2.72; g.add(ring);
+    cosmeticAnims.push(t=>{ ring.position.y=2.72+Math.sin(t*2)*.05; });
+  } else if(eq.head==='antler'){
+    for(const sx of [-1,1]){
+      const main=new THREE.Mesh(new THREE.CylinderGeometry(.04,.06,.4,6), mat(0x8A6248)); main.position.set(sx*.22,2.55,0); main.rotation.z=sx*-.3; g.add(main);
+      for(let b=0;b<2;b++){ const br=new THREE.Mesh(new THREE.CylinderGeometry(.03,.04,.18,6), mat(0x8A6248)); br.position.set(sx*(.32+b*.08),2.68+b*.1,0); br.rotation.z=sx*-.9; g.add(br); }
     }
+  } else if(eq.head==='chef'){
+    const band=new THREE.Mesh(new THREE.CylinderGeometry(.36,.36,.18,14), mat(0xffffff)); band.position.y=2.4; g.add(band);
+    const puff=new THREE.Mesh(new THREE.SphereGeometry(.42,12,10), mat(0xffffff)); puff.position.y=2.66; puff.scale.y=.7; g.add(puff);
+  } else if(eq.head==='crown'){
+    const base=new THREE.Mesh(new THREE.CylinderGeometry(.3,.32,.2,10), emat(0xFFD35C,.4)); base.position.y=2.48; g.add(base);
+    for(let k=0;k<4;k++){ const sp=new THREE.Mesh(new THREE.ConeGeometry(.07,.18,4), emat(0xFFD35C,.4)); sp.position.set(Math.cos(k*Math.PI/2)*.26,2.64,Math.sin(k*Math.PI/2)*.26); g.add(sp); }
     const gem=new THREE.Mesh(new THREE.OctahedronGeometry(.08,0), emat(0xE25555,.7)); gem.position.set(0,2.52,.31); g.add(gem);
+  } else if(eq.head==='space'){
+    const dome=new THREE.Mesh(new THREE.SphereGeometry(.44,16,14), new THREE.MeshLambertMaterial({color:0xBFE8FF, transparent:true, opacity:.42})); dome.position.y=2.0; g.add(dome);
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(.44,.05,8,20), mat(0xE2E8F4)); ring.rotation.x=Math.PI/2; ring.position.y=1.78; g.add(ring);
+    const ant=new THREE.Mesh(new THREE.SphereGeometry(.06,8,6), emat(0xE25555,.6)); ant.position.set(0,2.5,0); g.add(ant);
   }
+  /* ---------- 얼굴 ---------- */
+  if(eq.face==='glasses'){
+    for(const sx of [-1,1]){ const rim=new THREE.Mesh(new THREE.TorusGeometry(.1,.02,8,14), mat(0x2A2438)); rim.position.set(sx*.15,1.93,.33); g.add(rim); }
+    const br=new THREE.Mesh(new THREE.BoxGeometry(.1,.02,.02), mat(0x2A2438)); br.position.set(0,1.93,.33); g.add(br);
+  } else if(eq.face==='shades'){
+    const bar=new THREE.Mesh(new THREE.BoxGeometry(.5,.12,.04), mat(0x1A1A22)); bar.position.set(0,1.93,.34); g.add(bar);
+    for(const sx of [-1,1]){ const lens=new THREE.Mesh(new THREE.BoxGeometry(.18,.13,.02), emat(0x3A5AA8,.2)); lens.position.set(sx*.15,1.93,.36); g.add(lens); }
+  } else if(eq.face==='mask'){
+    const m=new THREE.Mesh(new THREE.BoxGeometry(.7,.24,.62), mat(0x2A2E3A)); m.position.set(0,1.74,.02); g.add(m);
+  } else if(eq.face==='snorkel'){
+    const g2=new THREE.Mesh(new THREE.BoxGeometry(.5,.2,.06), emat(0x5AC8E8,.15)); g2.position.set(0,1.95,.34); g.add(g2);
+    const tube=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,.5,8), mat(0xFFD35C)); tube.position.set(.32,2.05,.2); tube.rotation.z=.2; g.add(tube);
+  }
+  /* ---------- 등 ---------- */
   if(eq.back==='cape'){
-    const cape=new THREE.Mesh(new THREE.BoxGeometry(.86,1.05,.06), mat(0xD64545));
-    cape.position.set(0,1.08,-.34); g.add(cape);
+    const cape=new THREE.Mesh(new THREE.BoxGeometry(.86,1.05,.06), mat(0xD64545)); cape.position.set(0,1.08,-.34); g.add(cape);
     cosmeticAnims.push(t=>{ cape.rotation.x=.12+Math.sin(t*3)*.07; });
   } else if(eq.back==='sword'){
     const sw=new THREE.Group();
@@ -1474,6 +1651,78 @@ function attachCosmetics(g){
       g.add(piv);
       cosmeticAnims.push(t=>{ piv.rotation.z=sx*(0.12+Math.sin(t*6)*0.18); });
     }
+  } else if(eq.back==='batwing'){
+    for(const sx of [-1,1]){
+      const piv=new THREE.Group(); piv.position.set(sx*.2,1.5,-.34);
+      const w=new THREE.Mesh(new THREE.BoxGeometry(.55,.4,.04), mat(0x4A3A5A)); w.position.set(sx*.32,-.02,0); w.rotation.z=sx*.4; piv.add(w);
+      g.add(piv);
+      cosmeticAnims.push(t=>{ piv.rotation.z=sx*(0.15+Math.sin(t*7)*0.25); });
+    }
+  } else if(eq.back==='jetpack'){
+    const body=new THREE.Mesh(new THREE.BoxGeometry(.44,.6,.24), mat(0xB0B8C4)); body.position.set(0,1.2,-.38); g.add(body);
+    for(const sx of [-1,1]){ const tank=new THREE.Mesh(new THREE.CylinderGeometry(.1,.1,.5,10), mat(0xE25555)); tank.position.set(sx*.15,1.2,-.44); g.add(tank); }
+    for(const sx of [-1,1]){ const fl=new THREE.Mesh(new THREE.ConeGeometry(.09,.3,8), emat(0xF2A93B,.6)); fl.rotation.x=Math.PI; fl.position.set(sx*.15,.82,-.44); g.add(fl);
+      cosmeticAnims.push(t=>{ fl.scale.y=.7+Math.sin(t*20+sx)*.3; }); }
+  } else if(eq.back==='shell'){
+    const shell=new THREE.Mesh(new THREE.SphereGeometry(.5,14,10,0,Math.PI*2,0,Math.PI/2), mat(0x4E7C3A)); shell.position.set(0,1.15,-.32); shell.rotation.x=-.3; g.add(shell);
+    for(let k=0;k<5;k++){ const a=k*Math.PI*2/5; const hex=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.05,6), mat(0x6BA14A)); hex.position.set(Math.cos(a)*.24,1.28,-.28+Math.sin(a)*.18); hex.rotation.x=Math.PI/2-.3; g.add(hex); }
+  } else if(eq.back==='backpack2'){
+    const bag=new THREE.Mesh(new THREE.BoxGeometry(.5,.6,.26), mat(0xE07B3A)); bag.position.set(0,1.15,-.36); g.add(bag);
+    const flap=new THREE.Mesh(new THREE.BoxGeometry(.52,.22,.28), mat(0xC96528)); flap.position.set(0,1.36,-.36); g.add(flap);
+  } else if(eq.back==='balloon'){
+    const str=new THREE.Mesh(new THREE.CylinderGeometry(.01,.01,1,4), mat(0xffffff)); str.position.set(-.2,1.9,-.3); g.add(str);
+    const ball=new THREE.Mesh(new THREE.SphereGeometry(.3,12,10), emat(0xE25555,.1)); ball.position.set(-.2,2.6,-.3); ball.scale.y=1.15; g.add(ball);
+    cosmeticAnims.push(t=>{ ball.position.x=-.2+Math.sin(t*1.5)*.06; });
+  } else if(eq.back==='fairywing'){
+    for(const sx of [-1,1]){
+      const piv=new THREE.Group(); piv.position.set(sx*.15,1.55,-.3);
+      const w1=new THREE.Mesh(new THREE.SphereGeometry(.28,10,8), new THREE.MeshLambertMaterial({color:0xC8B0F0, transparent:true, opacity:.65})); w1.position.set(sx*.26,.1,0); w1.scale.set(.5,1,.1); piv.add(w1);
+      const w2=new THREE.Mesh(new THREE.SphereGeometry(.2,10,8), new THREE.MeshLambertMaterial({color:0xF0B0E0, transparent:true, opacity:.65})); w2.position.set(sx*.32,-.25,0); w2.scale.set(.4,.8,.1); piv.add(w2);
+      g.add(piv);
+      cosmeticAnims.push(t=>{ piv.rotation.z=sx*(0.1+Math.sin(t*10)*0.2); });
+    }
+  }
+  /* ---------- 손 (오른손에 부착) ---------- */
+  function handItem(build){
+    const grp=new THREE.Group(); build(grp);
+    grp.position.set(.54,.82,0); g.add(grp);   /* 오른팔 손 위치 근처 */
+  }
+  if(eq.hand==='wand'){
+    handItem(grp=>{
+      const stick=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.6,6), mat(0x5A4A3A)); stick.position.y=.1; grp.add(stick);
+      const star=new THREE.Mesh(new THREE.OctahedronGeometry(.1,0), emat(0xFFD35C,.7)); star.position.y=.42; grp.add(star);
+      cosmeticAnims.push(t=>{ star.rotation.y=t*3; });
+    });
+  } else if(eq.hand==='shield'){
+    handItem(grp=>{
+      const sh=new THREE.Mesh(new THREE.CylinderGeometry(.24,.2,.06,6), mat(0x5A8DEE)); sh.rotation.x=Math.PI/2; sh.rotation.z=Math.PI/6; grp.add(sh);
+      const cross=new THREE.Mesh(new THREE.BoxGeometry(.06,.28,.02), mat(0xFFD35C)); cross.position.z=.04; grp.add(cross);
+    });
+  } else if(eq.hand==='torch'){
+    handItem(grp=>{
+      const stick=new THREE.Mesh(new THREE.CylinderGeometry(.03,.04,.5,6), mat(0x5A4A3A)); stick.position.y=.05; grp.add(stick);
+      const fire=new THREE.Mesh(new THREE.ConeGeometry(.1,.24,8), emat(0xF2A93B,.7)); fire.position.y=.38; grp.add(fire);
+      cosmeticAnims.push(t=>{ fire.scale.y=.85+Math.sin(t*15)*.2; });
+    });
+  } else if(eq.hand==='flag'){
+    handItem(grp=>{
+      const pole=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.7,6), mat(0xC8D2E4)); pole.position.y=.15; grp.add(pole);
+      const flag=new THREE.Mesh(new THREE.BoxGeometry(.3,.2,.02), emat(0xE25555,.1)); flag.position.set(.16,.42,0); grp.add(flag);
+      cosmeticAnims.push(t=>{ flag.rotation.y=Math.sin(t*5)*.3; });
+    });
+  } else if(eq.hand==='balloon2'){
+    handItem(grp=>{
+      const str=new THREE.Mesh(new THREE.CylinderGeometry(.01,.01,.6,4), mat(0xffffff)); str.position.y=.25; grp.add(str);
+      const heart=new THREE.Mesh(new THREE.SphereGeometry(.16,10,8), emat(0xF25A8A,.15)); heart.position.y=.66; heart.scale.set(1,1.1,.9); grp.add(heart);
+      cosmeticAnims.push(t=>{ heart.position.x=Math.sin(t*2)*.04; });
+    });
+  } else if(eq.hand==='star_staff'){
+    handItem(grp=>{
+      const stick=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,.8,8), emat(0xFFD35C,.2)); stick.position.y=.15; grp.add(stick);
+      const star=new THREE.Mesh(new THREE.OctahedronGeometry(.16,0), emat(0xFFE680,.8)); star.position.y=.6; grp.add(star);
+      for(let k=0;k<3;k++){ const sp=new THREE.Mesh(new THREE.SphereGeometry(.03,6,5), emat(0xFFF4C0,.7)); sp.position.set(Math.cos(k*2)*.25,.6,Math.sin(k*2)*.25); grp.add(sp); }
+      cosmeticAnims.push(t=>{ star.rotation.y=t*2.5; grp.children.forEach((c,i)=>{ if(i>1) c.position.y=.6+Math.sin(t*3+i)*.1; }); });
+    });
   }
 }
 
@@ -2816,7 +3065,15 @@ function renderShop(){
   const list=document.getElementById('shopList');
   list.innerHTML='';
   if(shopTab==='style'){
+    let curSlot=null;
     COSMETICS.forEach(cs=>{
+      if(cs.slot!==curSlot){
+        curSlot=cs.slot;
+        const hd=document.createElement('div');
+        hd.style.cssText='font-size:14px;color:var(--sub);font-weight:bold;margin:10px 2px 2px;';
+        hd.innerHTML=SLOT_NAME[cs.slot]+' 아이템';
+        list.appendChild(hd);
+      }
       const owned=S.cosmetics.includes(cs.id);
       const equipped=S.equipped[cs.slot]===cs.id;
       const starOk=!cs.stars || totalStars()>=cs.stars;
@@ -2859,21 +3116,27 @@ function renderShop(){
   if(shopTab==='eggs'){
     PET_TYPES.forEach(tp=>{
       const row=document.createElement('div'); row.className='shopRow';
+      const starOk=!tp.stars || totalStars()>=tp.stars;
       row.innerHTML=`<div class="ic">&#129370;</div>
         <div class="info"><div class="nm">${tp.name} 알</div>
-        <div class="ds">먹이 ${tp.feeds}번 주면 ${tp.icon} ${tp.name}(으)로 부화!</div></div>`;
+        <div class="ds">먹이 ${tp.feeds}번 주면 ${tp.icon} ${tp.name}(으)로 부화!${tp.stars?' &#183; &#11088; '+tp.stars+'개 모으면 해금':''}</div></div>`;
       const btn=document.createElement('button'); btn.className='sBtn';
-      btn.innerHTML=`&#128142; ${tp.price}`;
-      btn.disabled = S.diamonds < tp.price;
-      btn.onclick=()=>{
-        if(S.diamonds<tp.price) return;
-        S.diamonds-=tp.price;
-        S.pets.push({type:tp.id, fed:0, hatched:false});
-        if(S.activePet==null) S.activePet=S.pets.length-1;
-        save(); updateHud(); setCompanion();
-        sfx.correct(); toast(tp.name+' 알을 샀어요! 먹이를 줘서 키워 보세요');
-        shopTab='pets'; renderShop();
-      };
+      if(!starOk){
+        btn.disabled=true;
+        btn.innerHTML=`&#11088; ${totalStars()} / ${tp.stars}`;
+      } else {
+        btn.innerHTML=`&#128142; ${tp.price}`;
+        btn.disabled = S.diamonds < tp.price;
+        btn.onclick=()=>{
+          if(S.diamonds<tp.price) return;
+          S.diamonds-=tp.price;
+          S.pets.push({type:tp.id, fed:0, hatched:false});
+          if(S.activePet==null) S.activePet=S.pets.length-1;
+          save(); updateHud(); setCompanion();
+          sfx.correct(); toast(tp.name+' 알을 샀어요! 먹이를 줘서 키워 보세요');
+          shopTab='pets'; renderShop();
+        };
+      }
       row.appendChild(btn); list.appendChild(row);
     });
     const tip=document.createElement('div');
