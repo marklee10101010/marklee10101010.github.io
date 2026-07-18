@@ -781,24 +781,27 @@ if(GFX_SOFT){
 function mat(c){ return new THREE.MeshLambertMaterial({color:c}); }          /* 부드러운 음영 */
 function fmat(c){ return new THREE.MeshLambertMaterial({color:c, flatShading:true}); } /* 각진 음영(바위/보석) */
 
-/* --- 섬: 완만한 곡면 지형 (걷는 면은 평평, 가장자리와 아래는 둥글게) --- */
+/* --- 섬: 평평한 잔디 상판 + 둥근 가장자리 + 곡면 흙 --- */
 function makeIsland(radius, grassColor){
   const g=new THREE.Group();
   const V=(x,y)=>new THREE.Vector2(x,y);
-  /* 잔디: 평평한 상판 -> 둥근 가장자리 -> 스커트 */
+  /* 1) 잔디 상판(평평한 원반): 걷는 면 전체를 확실히 덮음 (걷기 판정 반경 이상) */
+  const topDisk=new THREE.Mesh(new THREE.CylinderGeometry(radius*1.02, radius*1.02, 0.5, 44), mat(grassColor));
+  topDisk.position.y=-0.23; g.add(topDisk);
+  /* 2) 잔디 가장자리: 상판 반경에서 살짝 부풀었다가 아래로 말림 */
   const grassPts=[
-    V(0, 0.02), V(radius*0.55, 0.02), V(radius*0.85, -0.04),
-    V(radius*0.97, -0.22), V(radius, -0.62), V(radius*0.965, -1.25)
+    V(radius*1.02, 0.02), V(radius*1.04, -0.2),
+    V(radius*1.03, -0.5), V(radius*0.97, -1.0), V(radius*0.9, -1.45)
   ];
-  const grass=new THREE.Mesh(new THREE.LatheGeometry(grassPts, 30), mat(grassColor));
+  const grass=new THREE.Mesh(new THREE.LatheGeometry(grassPts, 40), mat(grassColor));
   g.add(grass);
-  /* 흙: 부드러운 곡선으로 뾰족한 바닥까지 */
+  /* 3) 흙: 가장자리 하단에서 부드러운 곡선으로 뾰족한 바닥까지 */
   const dirtPts=[
-    V(radius*0.965, -1.25), V(radius*0.8, -1.6-radius*0.28),
-    V(radius*0.52, -1.6-radius*0.62), V(radius*0.24, -1.6-radius*0.95),
+    V(radius*0.9, -1.45), V(radius*0.8, -1.6-radius*0.3),
+    V(radius*0.5, -1.6-radius*0.64), V(radius*0.24, -1.6-radius*0.95),
     V(radius*0.06, -1.6-radius*1.16), V(0, -1.6-radius*1.2)
   ];
-  const dirt=new THREE.Mesh(new THREE.LatheGeometry(dirtPts, 30), mat(0x8A6248));
+  const dirt=new THREE.Mesh(new THREE.LatheGeometry(dirtPts, 40), mat(0x8A6248));
   g.add(dirt);
   return g;
 }
