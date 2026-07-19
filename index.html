@@ -618,7 +618,7 @@ const WORLDS=[
 /* ============================================================
    버전 / 멀티 프로필 저장
 ============================================================ */
-const VERSION='3.7.1';
+const VERSION='3.7.2';
 const SAVE_VER=3;
 const SAVE_KEY='starlight3d_mp';
 const MAX_PROFILES=4;
@@ -3261,10 +3261,30 @@ const PREVIEWS=[];
     setTimeout(()=>{ ls.classList.add('done'); setTimeout(()=>ls.remove(),600); },350);
   }
 })();
-/* PWA 서비스워커 등록 (홈 화면 설치 + 오프라인) */
+/* PWA 서비스워커 등록 (홈 화면 설치 + 오프라인 + 자동 갱신) */
 if('serviceWorker' in navigator && location.protocol==='https:'){
   window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    navigator.serviceWorker.register('./sw.js').then(reg=>{
+      /* 주기적으로 새 버전 확인 */
+      reg.update();
+      setInterval(()=>reg.update(), 60*1000);
+      /* 새 서비스워커가 설치되면 즉시 활성화 요청 */
+      reg.addEventListener('updatefound',()=>{
+        const nw=reg.installing;
+        if(!nw) return;
+        nw.addEventListener('statechange',()=>{
+          if(nw.state==='installed' && navigator.serviceWorker.controller){
+            nw.postMessage({type:'SKIP_WAITING'});
+          }
+        });
+      });
+    }).catch(()=>{});
+    /* 새 워커가 제어권을 잡으면 한 번만 새로고침 */
+    let reloaded=false;
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{
+      if(reloaded) return; reloaded=true;
+      location.reload();
+    });
   });
 }
 function syncTitleInputs(){
