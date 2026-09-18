@@ -496,6 +496,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d1630;
       <button class="shopTab sel" id="tabEggs" data-tab="eggs">알 상점</button>
       <button class="shopTab" id="tabStyle" data-tab="style">꾸미기</button>
       <button class="shopTab" id="tabPets" data-tab="pets">내 친구들</button>
+      <button class="shopTab" id="tabDex" data-tab="dex">도감</button>
     </div>
     <div id="shopList"></div>
   </div>
@@ -631,7 +632,7 @@ const WORLDS=[
 /* ============================================================
    버전 / 멀티 프로필 저장
 ============================================================ */
-const VERSION='3.8.1';
+const VERSION='3.9.0';
 const SAVE_VER=3;
 const SAVE_KEY='starlight3d_mp';
 const MAX_PROFILES=4;
@@ -923,23 +924,25 @@ const PLAY_POS={x:-7.5,z:-5.5};
 
 /* --- 펫 시스템 --- */
 const PET_TYPES=[
- {id:'chick',   name:'병아리',      price:30,  feeds:3, icon:'&#128036;', egg:0xFFE066},
- {id:'duck',    name:'오리',        price:35,  feeds:3, icon:'&#129414;', egg:0xFFF0C0},
- {id:'puppy',   name:'강아지',      price:50,  feeds:4, icon:'&#128054;', egg:0xC9A075},
- {id:'cat',     name:'고양이',      price:50,  feeds:4, icon:'&#128049;', egg:0xB8C4D8},
- {id:'rabbit',  name:'토끼',        price:70,  feeds:5, icon:'&#128048;', egg:0xF5E8EE},
- {id:'panda',   name:'판다',        price:90,  feeds:5, icon:'&#128060;', egg:0xE8E8E8},
- {id:'fox',     name:'여우',        price:85,  feeds:5, icon:'&#129418;', egg:0xF0B070},
- {id:'penguin', name:'펭귄',        price:80,  feeds:5, icon:'&#128039;', egg:0xC0D0E0},
- {id:'frog',    name:'개구리',      price:60,  feeds:4, icon:'&#128056;', egg:0xB0E080},
- {id:'pig',     name:'아기 돼지',   price:65,  feeds:4, icon:'&#128055;', egg:0xF5C0C8},
- {id:'bear',    name:'곰',          price:100, feeds:6, icon:'&#128059;', egg:0xC49A6C},
- {id:'dragon',  name:'아기 드래곤', price:150, feeds:8, icon:'&#128050;', egg:0x8FE0A0},
- {id:'unicorn', name:'유니콘',      price:180, feeds:8, stars:10, icon:'&#129412;', egg:0xF0D0F0},
- {id:'dino',    name:'공룡',        price:170, feeds:8, icon:'&#129429;', egg:0xA0E0B0},
- {id:'phoenix', name:'불사조',      price:220, feeds:9, stars:14, icon:'&#128293;', egg:0xFFB060}
+ {id:'chick',   name:'병아리',      price:30,  feeds:3, icon:'&#128036;', egg:0xFFE066, evo:'닭'},
+ {id:'duck',    name:'오리',        price:35,  feeds:3, icon:'&#129414;', egg:0xFFF0C0, evo:'큰 오리'},
+ {id:'puppy',   name:'강아지',      price:50,  feeds:4, icon:'&#128054;', egg:0xC9A075, evo:'멍멍이'},
+ {id:'cat',     name:'고양이',      price:50,  feeds:4, icon:'&#128049;', egg:0xB8C4D8, evo:'큰 고양이'},
+ {id:'rabbit',  name:'토끼',        price:70,  feeds:5, icon:'&#128048;', egg:0xF5E8EE, evo:'큰 토끼'},
+ {id:'panda',   name:'판다',        price:90,  feeds:5, icon:'&#128060;', egg:0xE8E8E8, evo:'대왕 판다'},
+ {id:'fox',     name:'여우',        price:85,  feeds:5, icon:'&#129418;', egg:0xF0B070, evo:'불꽃 여우'},
+ {id:'penguin', name:'펭귄',        price:80,  feeds:5, icon:'&#128039;', egg:0xC0D0E0, evo:'황제 펭귄'},
+ {id:'frog',    name:'개구리',      price:60,  feeds:4, icon:'&#128056;', egg:0xB0E080, evo:'왕개구리'},
+ {id:'pig',     name:'아기 돼지',   price:65,  feeds:4, icon:'&#128055;', egg:0xF5C0C8, evo:'큰 돼지'},
+ {id:'bear',    name:'곰',          price:100, feeds:6, icon:'&#128059;', egg:0xC49A6C, evo:'큰 곰'},
+ {id:'dragon',  name:'아기 드래곤', price:150, feeds:8, icon:'&#128050;', egg:0x8FE0A0, evo:'드래곤'},
+ {id:'unicorn', name:'유니콘',      price:180, feeds:8, stars:10, icon:'&#129412;', egg:0xF0D0F0, evo:'무지개 유니콘'},
+ {id:'dino',    name:'공룡',        price:170, feeds:8, icon:'&#129429;', egg:0xA0E0B0, evo:'킹 공룡'},
+ {id:'phoenix', name:'불사조',      price:220, feeds:9, stars:14, icon:'&#128293;', egg:0xFFB060, evo:'전설의 불사조'}
 ];
 function petType(id){ return PET_TYPES.find(t=>t.id===id); }
+const EVO_FEEDS=6;   /* 부화 후 추가로 이만큼 더 먹이면 진화 */
+const SHINY_RATE=0.08; /* 알 구매 시 반짝이(레어) 확률 8% */
 function buildEgg(color){
   const g=new THREE.Group();
   const egg=new THREE.Mesh(new THREE.SphereGeometry(.42,8,7), mat(color));
@@ -950,6 +953,40 @@ function buildEgg(color){
     sp.position.set(p[0],p[1],p[2]); sp.rotation.x=Math.PI/2.4; g.add(sp);
   });
   return {g, egg:true};
+}
+function petStage(pet){
+  /* 부화 후 추가 먹이량으로 진화 여부 판정 */
+  const tp=petType(pet.type);
+  const extra=Math.max(0,(pet.fed||0)-tp.feeds);
+  return extra>=EVO_FEEDS ? 1 : 0;   /* 0:기본, 1:진화 */
+}
+/* 진화/반짝이 연출을 입힌 펫 (기존 buildAnimal 위에 덧입힘) */
+function buildPetVisual(pet){
+  const out=buildAnimal(pet.type);
+  const g=out.g;
+  const evolved=petStage(pet)===1;
+  if(evolved){
+    g.scale.setScalar(1.4);
+    /* 진화 표식: 머리 위 작은 왕관 */
+    const crown=new THREE.Group();
+    const band=new THREE.Mesh(new THREE.CylinderGeometry(.13,.15,.1,10), emat(0xFFD35C,.4));
+    crown.add(band);
+    for(let k=0;k<4;k++){ const sp=new THREE.Mesh(new THREE.ConeGeometry(.04,.11,4), emat(0xFFD35C,.4)); sp.position.set(Math.cos(k*Math.PI/2)*.11,.1,Math.sin(k*Math.PI/2)*.11); crown.add(sp); }
+    crown.position.y=1.2; g.add(crown);
+  }
+  if(pet.shiny){
+    /* 반짝이: 몸체를 금빛으로 물들이고 반짝임 파티클 */
+    g.traverse(o=>{ if(o.isMesh && o.material && o.material.color){
+      try{ o.material=o.material.clone(); o.material.emissive=new THREE.Color(0xFFD35C); o.material.emissiveIntensity=0.35; }catch(e){}
+    }});
+    out.shinyGlow=[];
+    for(let k=0;k<4;k++){
+      const s=new THREE.Mesh(new THREE.OctahedronGeometry(.06,0), new THREE.MeshBasicMaterial({color:0xFFF4C0}));
+      s.userData.ph=k*1.57; g.add(s); out.shinyGlow.push(s);
+    }
+  }
+  out.evolved=evolved;
+  return out;
 }
 function buildAnimal(id){
   const g=new THREE.Group(); const out={g};
@@ -1133,7 +1170,7 @@ function setCompanion(){
   const i=S.activePet;
   if(i==null || !S.pets || !S.pets[i]){ updatePetChip(); return; }
   const pet=S.pets[i], tp=petType(pet.type);
-  const built = pet.hatched ? buildAnimal(pet.type) : buildEgg(tp.egg);
+  const built = pet.hatched ? buildPetVisual(pet) : buildEgg(tp.egg);
   companion=built.g; compParts=built;
   applyShadow(companion);
   companion.position.set(player.position.x+1.6, 0, player.position.z+1.2);
@@ -2036,6 +2073,13 @@ function animate(){
     } else {
       companion.position.y = dist>0.3 ? Math.abs(Math.sin(t*9))*0.1 : 0;
       if(compParts.tail) compParts.tail.rotation.y=Math.sin(t*7)*0.35;
+    }
+    if(compParts.shinyGlow){
+      compParts.shinyGlow.forEach((s,k)=>{
+        const a=s.userData.ph+t*2;
+        s.position.set(Math.cos(a)*0.55, 0.6+Math.sin(t*3+k)*0.25, Math.sin(a)*0.55);
+        s.rotation.y=t*3; const sc=0.7+Math.sin(t*6+k)*0.3; s.scale.setScalar(sc);
+      });
     }
   }
 
@@ -3296,16 +3340,56 @@ document.getElementById('shopClose').onclick=closeShop;
 document.getElementById('tabEggs').onclick=()=>{ sfx.click(); shopTab='eggs'; renderShop(); };
 document.getElementById('tabStyle').onclick=()=>{ sfx.click(); shopTab='style'; renderShop(); };
 document.getElementById('tabPets').onclick=()=>{ sfx.click(); shopTab='pets'; renderShop(); };
+document.getElementById('tabDex').onclick=()=>{ sfx.click(); shopTab='dex'; renderShop(); };
 document.getElementById('hPetChip').onclick=()=>{ if(started) openShop('pets'); };
 const FEED_COST=5;
+/* 펫 도감: 15종 수집 현황 */
+function renderDex(list){
+  const owned={}, evolved={}, shiny={};
+  (S.pets||[]).forEach(p=>{
+    if(p.hatched){ owned[p.type]=true; if(petStage(p)===1) evolved[p.type]=true; if(p.shiny) shiny[p.type]=true; }
+  });
+  const total=PET_TYPES.length;
+  const got=Object.keys(owned).length;
+  const head=document.createElement('div');
+  head.style.cssText='text-align:center;margin-bottom:12px;';
+  head.innerHTML=`<div style="font-size:20px;">&#128218; 펫 도감</div>
+    <div style="color:var(--sub);font-size:15px;margin-top:4px;">${got} / ${total} 종 발견 &#183; &#128081; ${Object.keys(evolved).length} 진화 &#183; &#10024; ${Object.keys(shiny).length} 반짝이</div>`;
+  list.appendChild(head);
+  const grid=document.createElement('div');
+  grid.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:8px;';
+  PET_TYPES.forEach(tp=>{
+    const has=owned[tp.id];
+    const cell=document.createElement('div');
+    cell.style.cssText=`background:${has?'#FFF7E0':'#EDF1F8'};border-radius:14px;padding:12px 6px;text-align:center;${has?'':'opacity:.55;'}`;
+    const badges=(evolved[tp.id]?' &#128081;':'')+(shiny[tp.id]?' &#10024;':'');
+    cell.innerHTML=`<div style="font-size:34px;filter:${has?'none':'grayscale(1) brightness(1.3)'};">${has?tp.icon:'&#10068;'}</div>
+      <div style="font-size:13px;margin-top:4px;color:${has?'#243044':'#8fa3cf'};">${has?tp.name:'???'}${badges}</div>`;
+    grid.appendChild(cell);
+  });
+  list.appendChild(grid);
+  if(got<total){
+    const tip=document.createElement('div');
+    tip.style.cssText='text-align:center;color:var(--sub);font-size:13px;margin-top:12px;font-weight:normal;';
+    tip.innerHTML='알 상점에서 알을 사서 모든 친구를 모아 보세요!';
+    list.appendChild(tip);
+  } else {
+    const tip=document.createElement('div');
+    tip.style.cssText='text-align:center;color:var(--gold);font-size:15px;margin-top:12px;';
+    tip.innerHTML='&#127881; 모든 펫을 모았어요! 대단해요!';
+    list.appendChild(tip);
+  }
+}
 function refreshPlayerLook(){ setPlayerChar(S.charIdx||0, S.name||null); }
 function renderShop(){
   document.getElementById('shopDia').innerText=S.diamonds;
   document.getElementById('tabEggs').className='shopTab'+(shopTab==='eggs'?' sel':'');
   document.getElementById('tabStyle').className='shopTab'+(shopTab==='style'?' sel':'');
   document.getElementById('tabPets').className='shopTab'+(shopTab==='pets'?' sel':'');
+  document.getElementById('tabDex').className='shopTab'+(shopTab==='dex'?' sel':'');
   const list=document.getElementById('shopList');
   list.innerHTML='';
+  if(shopTab==='dex'){ renderDex(list); return; }
   if(shopTab==='style'){
     let curSlot=null;
     COSMETICS.forEach(cs=>{
@@ -3372,10 +3456,12 @@ function renderShop(){
         btn.onclick=()=>{
           if(S.diamonds<tp.price) return;
           S.diamonds-=tp.price;
-          S.pets.push({type:tp.id, fed:0, hatched:false});
+          const shiny=Math.random()<SHINY_RATE;
+          S.pets.push({type:tp.id, fed:0, hatched:false, shiny});
           if(S.activePet==null) S.activePet=S.pets.length-1;
           save(); updateHud(); setCompanion();
-          sfx.correct(); toast(tp.name+' 알을 샀어요! 먹이를 줘서 키워 보세요');
+          sfx.correct();
+          toast(shiny ? ('&#10024; 반짝이는 '+tp.name+' 알이에요! 행운!') : (tp.name+' 알을 샀어요! 먹이를 줘서 키워 보세요'));
           shopTab='pets'; renderShop();
         };
       }
@@ -3394,15 +3480,23 @@ function renderShop(){
       const tp=petType(pet.type);
       const row=document.createElement('div'); row.className='shopRow';
       const isActive = S.activePet===i;
+      const evolved = pet.hatched && petStage(pet)===1;
+      const shinyTag = pet.shiny ? ' <span style="color:#e0a020;">&#10024;</span>' : '';
+      const dispName = (evolved? tp.evo : tp.name) + shinyTag;
       let inner=`<div class="ic">${pet.hatched?tp.icon:'&#129370;'}</div>
-        <div class="info"><div class="nm">${tp.name}${pet.hatched?'':' 알'}</div>`;
-      if(pet.hatched){
-        inner+=`<div class="ds">다 자랐어요! 함께 모험할 수 있어요</div></div>`;
-      } else {
+        <div class="info"><div class="nm">${dispName}${pet.hatched?'':' 알'}</div>`;
+      if(!pet.hatched){
         inner+=`<div class="ds">먹이 ${pet.fed} / ${tp.feeds}</div>
           <div class="feedBar"><i style="width:${pet.fed/tp.feeds*100}%"></i></div></div>`;
+      } else if(evolved){
+        inner+=`<div class="ds">&#128081; 다 컸어요! 최고의 친구예요</div></div>`;
+      } else {
+        const extra=Math.max(0,(pet.fed||0)-tp.feeds);
+        inner+=`<div class="ds">진화까지 ${extra} / ${EVO_FEEDS}</div>
+          <div class="feedBar"><i style="width:${extra/EVO_FEEDS*100}%"></i></div></div>`;
       }
       row.innerHTML=inner;
+      /* 부화 전: 부화용 먹이 / 부화 후 미진화: 진화용 먹이 */
       if(!pet.hatched){
         const feedBtn=document.createElement('button'); feedBtn.className='sBtn';
         feedBtn.innerHTML=`먹이 &#128142;${FEED_COST}`;
@@ -3412,10 +3506,25 @@ function renderShop(){
           S.diamonds-=FEED_COST; pet.fed++;
           if(pet.fed>=tp.feeds){
             pet.hatched=true; sfx.star();
-            toast(`알에서 ${tp.icon} ${tp.name}이(가) 태어났어요!`);
+            toast(`알에서 ${tp.icon} ${(pet.shiny?'반짝이는 ':'')}${tp.name}이(가) 태어났어요!`);
             if(S.activePet===i) setCompanion();
           } else { sfx.correct(); }
           save(); updateHud(); updatePetChip(); renderShop();
+        };
+        row.appendChild(feedBtn);
+      } else if(!evolved){
+        const feedBtn=document.createElement('button'); feedBtn.className='sBtn';
+        feedBtn.innerHTML=`키우기 &#128142;${FEED_COST}`;
+        feedBtn.disabled = S.diamonds<FEED_COST;
+        feedBtn.onclick=()=>{
+          if(S.diamonds<FEED_COST) return;
+          S.diamonds-=FEED_COST; pet.fed++;
+          if(petStage(pet)===1){
+            sfx.star();
+            toast(`&#128081; ${tp.name}이(가) ${tp.evo}(으)로 진화했어요!`);
+            if(S.activePet===i) setCompanion();
+          } else { sfx.correct(); }
+          save(); updateHud(); renderShop();
         };
         row.appendChild(feedBtn);
       }
