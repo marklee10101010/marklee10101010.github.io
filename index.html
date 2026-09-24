@@ -653,7 +653,7 @@ const WORLDS=[
 /* ============================================================
    버전 / 멀티 프로필 저장
 ============================================================ */
-const VERSION='4.1.0';
+const VERSION='4.1.1';
 const SAVE_VER=3;
 const SAVE_KEY='starlight3d_mp';
 const MAX_PROFILES=4;
@@ -917,7 +917,7 @@ const BALLPARK_PLACED=true;
   const ball=new THREE.Mesh(new THREE.SphereGeometry(.5,16,12), mat(0xFFFFFF)); ball.position.set(0,3.0,0); g.add(ball);
   const seam=new THREE.Mesh(new THREE.TorusGeometry(.5,.03,6,20), mat(0xE05555)); seam.position.copy(ball.position); seam.rotation.x=1.0; g.add(seam);
   ballAnim={ball, seam, g};
-  const sign=labelSprite('&#9918; 야구장', '#5A8DEE'); sign.position.set(0,4.1,0); g.add(sign);
+  const sign=labelSprite('야구장', '#5A8DEE'); sign.position.set(0,4.1,0); g.add(sign);
   g.position.set(BALL_POS.x,0,BALL_POS.z);
   scene.add(g);
 })();
