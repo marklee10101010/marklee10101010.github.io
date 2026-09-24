@@ -513,6 +513,16 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d1630;
   </div>
 </div>
 
+<div id="ballOverlay" style="position:fixed;inset:0;z-index:31;background:rgba(13,22,48,.6);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:16px;">
+  <div id="ballCard" style="background:var(--card);border-radius:26px;width:min(560px,96vw);max-height:94vh;overflow-y:auto;padding:22px;box-shadow:0 24px 60px rgba(0,0,0,.4);animation:pop .3s;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <div style="font-size:22px;">&#9918; 별빛 야구 리그</div>
+      <button id="ballClose" style="background:none;border:none;font-size:22px;color:var(--sub);font-family:inherit;">&#10005;</button>
+    </div>
+    <div id="ballBody"></div>
+  </div>
+</div>
+
 <div id="playOverlay" style="position:fixed;inset:0;z-index:31;background:rgba(13,22,48,.6);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:16px;">
   <div id="playCard" style="background:var(--card);border-radius:26px;width:min(560px,96vw);max-height:94vh;overflow-y:auto;padding:22px;box-shadow:0 24px 60px rgba(0,0,0,.4);animation:pop .3s;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
@@ -643,7 +653,7 @@ const WORLDS=[
 /* ============================================================
    버전 / 멀티 프로필 저장
 ============================================================ */
-const VERSION='4.0.0';
+const VERSION='4.1.0';
 const SAVE_VER=3;
 const SAVE_KEY='starlight3d_mp';
 const MAX_PROFILES=4;
@@ -866,8 +876,13 @@ function rndOnIsland(cx,cz,r){
 
 /* 허브 섬 */
 const hub=makeIsland(HUB_R, 0x7CC15E); scene.add(hub);
-for(let i=0;i<8;i++){ const [x,z]=rndOnIsland(0,0,HUB_R-3.5); const t=makeTree(0.8+Math.random()*0.6); t.position.set(x,0,z); scene.add(t); }
-for(let i=0;i<5;i++){ const [x,z]=rndOnIsland(0,0,HUB_R-3); const r=makeRock(0.7+Math.random()*0.8); r.position.x=x; r.position.z=z; scene.add(r); }
+const SHOP_POS={x:6.5,z:-6.5};
+const PLAY_POS={x:-7.5,z:-5.5};
+const BALL_POS={x:0,z:9.5};
+var ballAnim=null;
+function farFromStructures(x,z){ return Math.hypot(x-BALL_POS.x,z-BALL_POS.z)>4.8 && Math.hypot(x-PLAY_POS.x,z-PLAY_POS.z)>3.8 && Math.hypot(x-SHOP_POS.x,z-SHOP_POS.z)>3.8; }
+for(let i=0;i<8;i++){ let x,z,tries=0; do{ [x,z]=rndOnIsland(0,0,HUB_R-3.5); }while(!farFromStructures(x,z)&&tries++<10); const t=makeTree(0.8+Math.random()*0.6); t.position.set(x,0,z); scene.add(t); }
+for(let i=0;i<5;i++){ let x,z,tries=0; do{ [x,z]=rndOnIsland(0,0,HUB_R-3); }while(!farFromStructures(x,z)&&tries++<10); const r=makeRock(0.7+Math.random()*0.8); r.position.x=x; r.position.z=z; scene.add(r); }
 /* 허브 중앙 우물 */
 (function(){
   const w=new THREE.Group();
@@ -879,8 +894,33 @@ for(let i=0;i<5;i++){ const [x,z]=rndOnIsland(0,0,HUB_R-3); const r=makeRock(0.7
 })();
 
 /* --- 별빛 상점 (허브) --- */
-const SHOP_POS={x:6.5,z:-6.5};
-const PLAY_POS={x:-7.5,z:-5.5};
+const BALLPARK_PLACED=true;
+(function(){
+  /* 야구장: 다이아몬드 내야 + 홈플레이트 + 조명탑 */
+  const g=new THREE.Group();
+  const dirt=new THREE.Mesh(new THREE.CylinderGeometry(2.2,2.2,.1,4), mat(0xC98A4A)); dirt.position.y=.06; dirt.rotation.y=Math.PI/4; g.add(dirt);
+  const grass=new THREE.Mesh(new THREE.CylinderGeometry(1.3,1.3,.12,4), mat(0x6CB84E)); grass.position.y=.08; grass.rotation.y=Math.PI/4; g.add(grass);
+  /* 베이스 4개 */
+  const baseM=mat(0xFFFFFF);
+  [[0,-1.9],[1.9,0],[0,1.9],[-1.9,0]].forEach(([x,z])=>{
+    const bs=new THREE.Mesh(new THREE.BoxGeometry(.28,.06,.28), baseM); bs.position.set(x,.14,z); bs.rotation.y=Math.PI/4; g.add(bs);
+  });
+  /* 홈플레이트 펜스 */
+  const backstop=new THREE.Mesh(new THREE.BoxGeometry(2.4,.9,.1), new THREE.MeshLambertMaterial({color:0xB0C4DE, transparent:true, opacity:.5}));
+  backstop.position.set(0,.5,-2.6); g.add(backstop);
+  /* 조명탑 2개 */
+  for(const sx of [-1,1]){
+    const pole=new THREE.Mesh(new THREE.CylinderGeometry(.08,.1,3.2,8), mat(0x8892A0)); pole.position.set(sx*2.6,1.6,-1.6); g.add(pole);
+    const panel=new THREE.Mesh(new THREE.BoxGeometry(.9,.5,.14), emat(0xFFF4C0,.5)); panel.position.set(sx*2.6,3.3,-1.5); panel.rotation.x=.3; g.add(panel);
+  }
+  /* 큰 야구공 아이콘(부양) */
+  const ball=new THREE.Mesh(new THREE.SphereGeometry(.5,16,12), mat(0xFFFFFF)); ball.position.set(0,3.0,0); g.add(ball);
+  const seam=new THREE.Mesh(new THREE.TorusGeometry(.5,.03,6,20), mat(0xE05555)); seam.position.copy(ball.position); seam.rotation.x=1.0; g.add(seam);
+  ballAnim={ball, seam, g};
+  const sign=labelSprite('&#9918; 야구장', '#5A8DEE'); sign.position.set(0,4.1,0); g.add(sign);
+  g.position.set(BALL_POS.x,0,BALL_POS.z);
+  scene.add(g);
+})();
 (function(){
   /* 놀이터: 알록달록한 놀이기구 */
   const g=new THREE.Group();
@@ -1515,6 +1555,8 @@ function spawnChest(){
     const [x,z]=rndOnIsland(cx,cz,r);
     if(Math.hypot(x-cx,z-cz)<2.6) continue;               /* NPC/구조물 중심 회피 */
     if(Math.hypot(x-SHOP_POS.x,z-SHOP_POS.z)<3.5) continue; /* 상점 회피 */
+    if(Math.hypot(x-PLAY_POS.x,z-PLAY_POS.z)<3.5) continue; /* 놀이터 회피 */
+    if(Math.hypot(x-BALL_POS.x,z-BALL_POS.z)<4.5) continue; /* 야구장 회피 */
     if(!walkable(x,z)) continue;
     const c=buildChest();
     c.g.position.set(x,0,z); c.g.rotation.y=Math.random()*Math.PI*2;
@@ -1953,7 +1995,7 @@ window.addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false; });
 /* ============================================================
    메인 루프
 ============================================================ */
-let nearNpc=null, nearShop=false, nearPlay=false, nearChest=null, quizOpen=false, shopOpen=false, setOpen=false, started=false, lastZone='';
+let nearNpc=null, nearShop=false, nearPlay=false, nearBall=false, nearChest=null, quizOpen=false, shopOpen=false, setOpen=false, started=false, lastZone='';
 const talkBtn=document.getElementById('talkBtn');
 const clock3=new THREE.Clock();
 let camAngle=0, stepAcc=0;
@@ -2093,9 +2135,11 @@ function animate(){
   nearShop = shopD<4.2 && shopD<nd;
   const playD=Math.hypot(player.position.x-PLAY_POS.x, player.position.z-PLAY_POS.z);
   nearPlay = playD<4.2 && playD<nd && !nearShop;
+  const ballD=Math.hypot(player.position.x-BALL_POS.x, player.position.z-BALL_POS.z);
+  nearBall = ballD<4.6 && ballD<nd && !nearShop && !nearPlay;
   const uiOpen = quizOpen||shopOpen||setOpen;
-  if(started && !uiOpen && (nearChest||nearNpc||nearShop||nearPlay)){
-    const label = nearChest ? '보물상자 열기' : nearShop ? '상점 구경하기' : nearPlay ? '놀이터에서 놀기' : nearNpc.world.npc+'에게 말 걸기';
+  if(started && !uiOpen && (nearChest||nearNpc||nearShop||nearPlay||nearBall)){
+    const label = nearChest ? '보물상자 열기' : nearShop ? '상점 구경하기' : nearPlay ? '놀이터에서 놀기' : nearBall ? '야구 시합하기' : nearNpc.world.npc+'에게 말 걸기';
     if(talkBtn.style.display!=='flex' || document.getElementById('talkLabel').innerText!==label){
       document.getElementById('talkLabel').innerText=label;
       talkBtn.style.display='flex';
@@ -2139,6 +2183,7 @@ function animate(){
 
   /* 테마 소품 애니메이션 */
   animProps.forEach(p=>p.fn(t));
+  if(ballAnim){ ballAnim.ball.position.y=3.0+Math.sin(t*1.8)*0.15; ballAnim.ball.rotation.y=t*0.8; ballAnim.seam.position.y=ballAnim.ball.position.y; ballAnim.seam.rotation.z=t*0.8; }
   cosmeticAnims.forEach(f=>f(t));
 
   /* 지역 배너 */
@@ -2610,7 +2655,9 @@ const TROPHIES=[
   {id:'evo1',       icon:'&#128171;', name:'첫 진화',      desc:'펫을 처음 진화시켰어요',    chk:()=>evolvedCount()>=1},
   {id:'shiny1',     icon:'&#10024;',  name:'반짝이 발견',  desc:'반짝이 펫을 얻었어요',      chk:()=>shinyCount()>=1},
   {id:'att7',       icon:'&#128197;', name:'개근상',      desc:'7일 연속 출석했어요',       chk:()=>(S.att&&S.att.streak>=7)},
-  {id:'allworld',   icon:'&#127758;', name:'세계 탐험가',  desc:'모든 섬에서 별을 얻었어요', chk:()=>WORLDS.every(w=>(S.stars[w.id]||0)>=1)}
+  {id:'allworld',   icon:'&#127758;', name:'세계 탐험가',  desc:'모든 섬에서 별을 얻었어요', chk:()=>WORLDS.every(w=>(S.stars[w.id]||0)>=1)},
+  {id:'ball_win',   icon:'&#9918;',   name:'첫 승리',      desc:'야구 시합에서 처음 이겼어요', chk:()=>(S.league&&S.league.played&&S.league.played.length>=1)},
+  {id:'ball_champ', icon:'&#127942;', name:'리그 우승',    desc:'10개 구단을 모두 이겼어요',   chk:()=>(S.league&&S.league.champ)}
 ];
 function checkTrophies(silent){
   if(!S.trophies) S.trophies=[];
@@ -2743,6 +2790,7 @@ function interact(){
   if(nearChest){ openChest(nearChest); return; }
   if(nearShop){ playTransition('#E87BB0', ()=>openShop('eggs')); return; }
   if(nearPlay){ playTransition('#9BE15D', ()=>openPlayground()); return; }
+  if(nearBall){ playTransition('#5A8DEE', ()=>openBallpark()); return; }
   if(nearNpc){ const w=nearNpc.world; playTransition(w.css, ()=>openQuiz(w)); }
 }
 talkBtn.onclick=interact;
@@ -3270,6 +3318,162 @@ let shopTab='eggs';
    놀이터 미니게임 (놀이는 보너스: 다이아 적게, 하루 한도)
 ============================================================ */
 const PLAY_DAILY_CAP=30;   /* 놀이로 하루 최대 획득 다이아 */
+/* ============================================================
+   별빛 야구 리그 (전 과목 랜덤 믹스 시합 + 리그 우승)
+============================================================ */
+const TEAMS=[
+  {id:'tiger',  name:'번개 타이거즈', c:'#F2A93B', emoji:'&#128047;'},
+  {id:'dino',   name:'별빛 다이노스', c:'#39C6C0', emoji:'&#129429;'},
+  {id:'eagle',  name:'은하 이글스',   c:'#8A6248', emoji:'&#129413;'},
+  {id:'giant',  name:'폭풍 자이언츠', c:'#5A6BB0', emoji:'&#127786;'},
+  {id:'twins',  name:'무지개 트윈스', c:'#E25585', emoji:'&#127752;'},
+  {id:'lion',   name:'태양 라이온즈', c:'#F26B3A', emoji:'&#129409;'},
+  {id:'lander', name:'바다 랜더스',   c:'#3AA8E8', emoji:'&#127754;'},
+  {id:'wiz',    name:'숲속 위즈',     c:'#7CC15E', emoji:'&#129418;'},
+  {id:'bear',   name:'구름 베어스',   c:'#9AA6B8', emoji:'&#128059;'},
+  {id:'hero',   name:'불꽃 히어로즈', c:'#E24545', emoji:'&#128293;'}
+];
+const MATCH_Q=5; /* 5타석 */
+/* 전 과목 랜덤 문제 (행맨 제외한 4지선다) */
+function randomMixQ(){
+  const pool=WORLDS.filter(w=>w.id!=='castle'); /* 영어(행맨 혼재) 제외해 단순화 */
+  const w=pool[Math.floor(Math.random()*pool.length)];
+  let lv=0;
+  const lvs=LEVELS[w.id]; if(lvs){ const cand=lvs.filter(l=>typeof l.p==='number'); if(cand.length) lv=cand[Math.floor(Math.random()*cand.length)].p; }
+  const q=GEN[w.id](lv);
+  return {q, world:w};
+}
+function leagueState(){
+  if(!S.league) S.league={ played:[], champ:false };
+  return S.league;
+}
+const ballOverlayEl=document.getElementById('ballOverlay');
+function openBallpark(){
+  sfx.click(); shopOpen=true; joyEnd();
+  renderBallMenu();
+  ballOverlayEl.style.display='flex';
+}
+function closeBallpark(){ sfx.click(); ballOverlayEl.style.display='none'; shopOpen=false; }
+document.getElementById('ballClose').onclick=()=>{ if(BQ&&BQ.active){ renderBallMenu(); } else closeBallpark(); };
+function renderBallMenu(){
+  BQ=null;
+  const lg=leagueState();
+  const beaten=new Set(lg.played);
+  const b=document.getElementById('ballBody');
+  let html=`<div style="color:var(--sub);font-size:14px;margin-bottom:12px;text-align:center;">
+    이긴 팀 ${lg.played.length} / ${TEAMS.length}${lg.champ?' &#183; &#127942; 리그 우승!':''}<br>
+    문제를 맞히면 안타, 3연속이면 홈런! 상대팀을 이겨 보세요</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">`;
+  TEAMS.forEach(tm=>{
+    const won=beaten.has(tm.id);
+    html+=`<button class="ballTeam" data-id="${tm.id}" style="border:none;border-radius:16px;padding:14px 8px;font-family:inherit;cursor:pointer;
+      background:${won?'#EAF7EE':'#F5F8FC'};box-shadow:0 3px 0 ${won?'#bfe6cb':'#dbe3ef'};text-align:center;">
+      <div style="font-size:30px;">${tm.emoji}</div>
+      <div style="font-size:14px;margin-top:4px;color:#243044;">${tm.name}</div>
+      <div style="font-size:12px;margin-top:2px;color:${won?'#1c7a47':'var(--sub)'};font-weight:normal;">${won?'&#9989; 이김':'도전!'}</div>
+    </button>`;
+  });
+  html+='</div>';
+  b.innerHTML=html;
+  b.querySelectorAll('.ballTeam').forEach(btn=>btn.onclick=()=>{ sfx.click(); startMatch(btn.dataset.id); });
+}
+let BQ=null;
+function startMatch(teamId){
+  const tm=TEAMS.find(t=>t.id===teamId);
+  BQ={ active:true, team:tm, idx:0, hits:0, homers:0, combo:0, myScore:0, oppScore:0, cur:null };
+  /* 상대 점수는 실력 기반 목표(2~4점) */
+  BQ.oppScore=2+Math.floor(Math.random()*3);
+  nextBall();
+}
+function nextBall(){
+  if(BQ.idx>=MATCH_Q){ return finishMatch(); }
+  const {q,world}=randomMixQ();
+  BQ.cur=q; BQ.curWorld=world;
+  renderBall();
+}
+function renderBall(){
+  const b=document.getElementById('ballBody');
+  const tm=BQ.team;
+  let opts='';
+  BQ.cur.options.forEach((o,i)=>{
+    opts+=`<button class="ballOpt" data-i="${i}" style="border:none;border-radius:16px;padding:16px;font-family:inherit;font-size:18px;background:#EDF1F8;color:#243044;box-shadow:0 3px 0 #d3dcec;cursor:pointer;">${o}</button>`;
+  });
+  b.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;background:#243044;border-radius:16px;padding:12px 16px;color:#fff;margin-bottom:12px;">
+      <div style="text-align:center;"><div style="font-size:13px;opacity:.8;">${S.name||'우리팀'}</div><div style="font-size:26px;color:var(--gold);">${BQ.myScore}</div></div>
+      <div style="font-size:14px;opacity:.7;">${BQ.idx+1} / ${MATCH_Q}회</div>
+      <div style="text-align:center;"><div style="font-size:13px;opacity:.8;">${tm.emoji} ${tm.name}</div><div style="font-size:26px;">${BQ.oppScore}</div></div>
+    </div>
+    <div style="text-align:center;margin-bottom:6px;color:var(--sub);font-size:14px;">${BQ.curWorld.name} 문제 ${BQ.combo>=2?'&#183; &#128293; '+BQ.combo+'연속!':''}</div>
+    ${BQ.cur.visual?('<div style="text-align:center;margin:6px 0;">'+BQ.cur.visual+'</div>'):''}
+    <div style="text-align:center;font-size:22px;margin:8px 0 14px;color:#243044;">${BQ.cur.prompt}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">${opts}</div>`;
+  b.querySelectorAll('.ballOpt').forEach(btn=>btn.onclick=()=>ballPick(parseInt(btn.dataset.i,10), btn));
+}
+function ballPick(i, btn){
+  if(BQ.locked) return; BQ.locked=true;
+  const ok = i===BQ.cur.answerIndex;
+  recStat(BQ.curWorld.id, ok);
+  if(ok){
+    BQ.combo++; BQ.hits++;
+    let runs=1, label='&#9918; 안타!';
+    if(BQ.combo>=3){ runs=2; BQ.homers++; label='&#128293; 홈런! 2점!'; }
+    BQ.myScore+=runs;
+    btn.style.background='#9be15d'; btn.style.color='#1c5c2f';
+    sfx.correct();
+    showBallHit(label, ok);
+  } else {
+    BQ.combo=0;
+    if(!BQ.review) addWrong(BQ.curWorld.id, BQ.cur);
+    btn.style.background='#f4b6b6';
+    const cbtn=document.querySelectorAll('.ballOpt')[BQ.cur.answerIndex]; if(cbtn){ cbtn.style.background='#9be15d'; cbtn.style.color='#1c5c2f'; }
+    sfx.wrong();
+    showBallHit('&#10060; 아웃!', ok);
+  }
+  save();
+  setTimeout(()=>{ BQ.locked=false; BQ.idx++; nextBall(); }, ok?900:1100);
+}
+function showBallHit(label, ok){
+  const o=document.getElementById('ansOverlay');
+  if(!o) return;
+  document.getElementById('ansIcon').innerHTML = ok?'&#9918;':'&#128551;';
+  const t=document.getElementById('ansTitle'); t.innerHTML=label; t.style.color= ok?'#1c7a47':'#a83030';
+  document.getElementById('ansSub').innerHTML='';
+  o.style.display='flex';
+  const c=document.getElementById('ansCard'); c.style.animation='none'; void c.offsetWidth; c.style.animation='';
+  clearTimeout(window._ballFx); window._ballFx=setTimeout(()=>{ o.style.display='none'; }, 800);
+}
+function finishMatch(){
+  const win = BQ.myScore>=BQ.oppScore;
+  const lg=leagueState();
+  let reward=0, firstWin=false;
+  if(win){
+    if(!lg.played.includes(BQ.team.id)){ lg.played.push(BQ.team.id); firstWin=true; }
+    reward=8 + BQ.homers*4;
+    S.diamonds+=reward;
+    if(lg.played.length>=TEAMS.length && !lg.champ){ lg.champ=true; }
+    sfx.star();
+  } else { sfx.wrong(); }
+  save(); updateHud();
+  setTimeout(()=>checkTrophies(), 400);
+  const b=document.getElementById('ballBody');
+  const tm=BQ.team;
+  b.innerHTML=`<div style="text-align:center;padding:16px 6px;">
+    <div style="font-size:56px;">${win?'&#127942;':'&#128546;'}</div>
+    <div style="font-size:26px;margin-top:6px;color:${win?'#1c7a47':'#a83030'};">${win?'승리!':'졌어요'}</div>
+    <div style="font-size:20px;margin-top:8px;">${S.name||'우리팀'} ${BQ.myScore} : ${BQ.oppScore} ${tm.name}</div>
+    <div style="color:var(--sub);font-size:14px;margin-top:6px;">안타 ${BQ.hits} &#183; 홈런 ${BQ.homers}</div>
+    ${win?`<div style="font-size:22px;color:var(--dia);margin:14px 0;">&#128142; +${reward}${firstWin?' &#183; 첫 승리!':''}</div>`:'<div style="margin:14px 0;color:var(--sub);">다시 도전해 보세요!</div>'}
+    ${lg.champ?'<div style="font-size:18px;color:var(--gold);margin-bottom:10px;">&#127942; 리그 우승 달성! 최고예요!</div>':''}
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button class="rBtn" id="ballAgain">${win?'다음 상대':'다시 도전'}</button>
+      <button class="rBtn ghost" id="ballMenu">팀 목록</button>
+    </div></div>`;
+  document.getElementById('ballAgain').onclick=()=>{ sfx.click(); renderBallMenu(); };
+  document.getElementById('ballMenu').onclick=()=>{ sfx.click(); renderBallMenu(); };
+  BQ.active=false;
+}
+
 const playOverlayEl=document.getElementById('playOverlay');
 let playOpen=false, miniRAF=null, miniCleanup=null;
 function todayKey(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
