@@ -390,6 +390,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d1630;
     <div class="chip"><span>&#128142;</span><span class="num" id="hDia">0</span></div>
     <div class="chip"><span style="color:var(--gold)">&#11088;</span><span class="num" id="hStar">0</span></div>
     <div class="chip" id="hQuestChip" style="cursor:pointer;"><span>&#128220;</span><span class="num" id="hQuestN"></span></div>
+    <div class="chip" id="hTrophyChip" style="cursor:pointer;"><span>&#127942;</span><span class="num" id="hTrophyN"></span></div>
     <div class="chip" id="hPetChip" style="cursor:pointer;"><span id="hPetIcon">&#128062;</span></div>
     <div class="chip" id="fsChip" style="cursor:pointer;"><span id="fsIcon">&#x26F6;</span></div>
     <div class="chip" id="setChip" style="cursor:pointer;"><span>&#9881;&#65039;</span></div>
@@ -426,6 +427,16 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d1630;
     <div class="attDots" id="attDots"></div>
     <div id="attReward" style="font-size:22px;margin:6px 0 16px;"></div>
     <button class="rBtn" id="attOk">받기!</button>
+  </div>
+</div>
+
+<div id="trophyOverlay" style="position:fixed;inset:0;z-index:36;background:rgba(13,22,48,.55);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:var(--card);border-radius:26px;width:min(480px,96vw);max-height:92vh;overflow-y:auto;padding:22px;box-shadow:0 24px 60px rgba(0,0,0,.4);animation:pop .3s;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div style="font-size:22px;">&#127942; 트로피</div>
+      <button id="trophyClose" style="background:none;border:none;font-size:22px;color:var(--sub);font-family:inherit;">&#10005;</button>
+    </div>
+    <div id="trophyBody"></div>
   </div>
 </div>
 
@@ -632,7 +643,7 @@ const WORLDS=[
 /* ============================================================
    버전 / 멀티 프로필 저장
 ============================================================ */
-const VERSION='3.9.0';
+const VERSION='4.0.0';
 const SAVE_VER=3;
 const SAVE_KEY='starlight3d_mp';
 const MAX_PROFILES=4;
@@ -679,7 +690,7 @@ function addXp(n){
   S.xp+=n;
   let up=false;
   while(S.xp>=xpNeed(S.level)){ S.xp-=xpNeed(S.level); S.level++; up=true; }
-  if(up) showLevelUp(S.level);
+  if(up){ showLevelUp(S.level); setTimeout(()=>checkTrophies(), 2000); }
   updateHud();
 }
 function showLevelUp(lv){
@@ -696,6 +707,7 @@ function updateHud(){
   document.getElementById('hXp').style.width=Math.min(100,S.xp/xpNeed(S.level)*100)+'%';
   document.getElementById('hDia').innerText=S.diamonds;
   document.getElementById('hStar').innerText=totalStars();
+  updateTrophyChip();
 }
 let toastTimer=null;
 function toast(msg){
@@ -1423,6 +1435,47 @@ scene.add(new THREE.Points(starGeo, starMat));
 const moonMat=new THREE.MeshBasicMaterial({color:0xEDF2FA, transparent:true, opacity:0, fog:false});
 const moon=new THREE.Mesh(new THREE.SphereGeometry(4.5,10,8), moonMat);
 moon.position.set(-72,58,-48); scene.add(moon);
+/* ============================================================
+   날씨 / 계절 (실제 월 기반 + 랜덤 날씨)
+============================================================ */
+const MONTH=new Date().getMonth()+1;
+let SEASON = MONTH>=3&&MONTH<=5?'spring' : MONTH>=6&&MONTH<=8?'summer' : MONTH>=9&&MONTH<=11?'autumn':'winter';
+/* 겨울엔 눈, 그 외엔 30% 확률로 비, 봄엔 벚꽃, 가을엔 낙엽 */
+let weather='clear';
+if(SEASON==='winter') weather='snow';
+else if(SEASON==='spring' && Math.random()<0.5) weather='petal';
+else if(SEASON==='autumn' && Math.random()<0.5) weather='leaf';
+else if(Math.random()<0.3) weather='rain';
+const weatherParts=[];
+(function(){
+  if(weather==='clear') return;
+  const conf={
+    snow:{n:90,col:0xffffff,size:.12,speed:2.2,sway:1.2,geo:'sphere'},
+    rain:{n:120,col:0xAECBF0,size:.05,speed:11,sway:0.1,geo:'line'},
+    petal:{n:50,col:0xF9C6DA,size:.14,speed:1.6,sway:2.2,geo:'flat'},
+    leaf:{n:50,col:0xE0913A,size:.16,speed:1.8,sway:2.4,geo:'flat'}
+  }[weather];
+  for(let i=0;i<conf.n;i++){
+    let m;
+    if(conf.geo==='line'){ m=new THREE.Mesh(new THREE.BoxGeometry(.03,.4,.03), mat(conf.col)); }
+    else if(conf.geo==='flat'){ m=new THREE.Mesh(new THREE.BoxGeometry(conf.size,.03,conf.size), mat(conf.col)); }
+    else { m=new THREE.Mesh(new THREE.SphereGeometry(conf.size,5,4), mat(conf.col)); }
+    weatherParts.push({m, x:(Math.random()-.5)*70, y:Math.random()*40, z:(Math.random()-.5)*70,
+      v:conf.speed*(0.7+Math.random()*0.6), ph:Math.random()*7, sway:conf.sway, spin:conf.geo!=='sphere'});
+    scene.add(m);
+  }
+})();
+function updateWeather(dt, t){
+  weatherParts.forEach(p=>{
+    p.y-=p.v*dt;
+    p.m.position.set(p.x + Math.sin(t*1.5+p.ph)*p.sway + player.position.x,
+                     p.y,
+                     p.z + Math.cos(t*1.2+p.ph)*p.sway*0.5 + player.position.z);
+    if(p.spin){ p.m.rotation.x=t*2+p.ph; p.m.rotation.z=t*1.5+p.ph; }
+    if(p.y<0){ p.y=38+Math.random()*4; p.x=(Math.random()-.5)*70; p.z=(Math.random()-.5)*70; }
+  });
+}
+
 /* 반딧불이 (밤에만) */
 const fireflies=[];
 for(let i=0;i<14;i++){
@@ -2011,6 +2064,7 @@ function animate(){
       f.m.material.emissiveIntensity=.6+Math.sin(t*4+f.ph)*.4;
     }
   });
+  updateWeather(dt, t);
 
   /* 보물상자 스폰 & 근접 */
   if(started && !quizOpen && !shopOpen && !setOpen){
@@ -2532,7 +2586,75 @@ function juiceCorrect(el, combo){
 }
 function recStat(w, ok){
   const s=S.stats[w]||(S.stats[w]={a:0,c:0});
-  s.a++; if(ok) s.c++; save();
+  s.a++; if(ok) s.c++;
+  checkTrophies();
+  save();
+}
+/* ============================================================
+   트로피 / 뱃지 (데이터에서 달성 여부를 계산)
+============================================================ */
+function totalCorrect(){ return Object.values(S.stats||{}).reduce((a,s)=>a+(s.c||0),0); }
+function ownedPetCount(){ const set=new Set((S.pets||[]).filter(p=>p.hatched).map(p=>p.type)); return set.size; }
+function evolvedCount(){ return (S.pets||[]).filter(p=>p.hatched && petStage(p)===1).length; }
+function shinyCount(){ return (S.pets||[]).filter(p=>p.hatched && p.shiny).length; }
+const TROPHIES=[
+  {id:'first_star', icon:'&#11088;', name:'첫 별',        desc:'별을 처음 모았어요',        chk:()=>totalStars()>=1},
+  {id:'star10',     icon:'&#127775;', name:'별 수집가',    desc:'별 10개를 모았어요',        chk:()=>totalStars()>=10},
+  {id:'star30',     icon:'&#127756;', name:'별 마스터',    desc:'별 30개를 모았어요',        chk:()=>totalStars()>=30},
+  {id:'correct50',  icon:'&#9989;',   name:'문제 해결사',  desc:'문제 50개를 맞혔어요',      chk:()=>totalCorrect()>=50},
+  {id:'correct200', icon:'&#127891;', name:'공부왕',      desc:'문제 200개를 맞혔어요',    chk:()=>totalCorrect()>=200},
+  {id:'lv5',        icon:'&#128081;', name:'레벨 5',      desc:'레벨 5에 도달했어요',       chk:()=>S.level>=5},
+  {id:'lv10',       icon:'&#128142;', name:'레벨 10',     desc:'레벨 10에 도달했어요',      chk:()=>S.level>=10},
+  {id:'pet3',       icon:'&#128054;', name:'펫 친구들',    desc:'펫 3종을 키웠어요',         chk:()=>ownedPetCount()>=3},
+  {id:'pet_all',    icon:'&#128218;', name:'도감 완성',    desc:'모든 펫을 모았어요',        chk:()=>ownedPetCount()>=PET_TYPES.length},
+  {id:'evo1',       icon:'&#128171;', name:'첫 진화',      desc:'펫을 처음 진화시켰어요',    chk:()=>evolvedCount()>=1},
+  {id:'shiny1',     icon:'&#10024;',  name:'반짝이 발견',  desc:'반짝이 펫을 얻었어요',      chk:()=>shinyCount()>=1},
+  {id:'att7',       icon:'&#128197;', name:'개근상',      desc:'7일 연속 출석했어요',       chk:()=>(S.att&&S.att.streak>=7)},
+  {id:'allworld',   icon:'&#127758;', name:'세계 탐험가',  desc:'모든 섬에서 별을 얻었어요', chk:()=>WORLDS.every(w=>(S.stars[w.id]||0)>=1)}
+];
+function checkTrophies(silent){
+  if(!S.trophies) S.trophies=[];
+  let newly=[];
+  TROPHIES.forEach(t=>{
+    if(!S.trophies.includes(t.id) && t.chk()){ S.trophies.push(t.id); newly.push(t); }
+  });
+  if(newly.length){
+    save();
+    updateTrophyChip();
+    if(!silent) newly.forEach((t,k)=>setTimeout(()=>showTrophyGet(t), k*1600));
+  }
+  return newly;
+}
+function updateTrophyChip(){
+  const el=document.getElementById('hTrophyN');
+  if(el) el.innerText=(S.trophies?S.trophies.length:0);
+}
+function showTrophyGet(t){
+  const o=document.getElementById('lvlOverlay');
+  if(!o) return;
+  document.getElementById('lvlNum').innerHTML=`<div style="font-size:60px;">${t.icon}</div><div style="font-size:26px;margin-top:6px;">${t.name}</div><div style="font-size:16px;color:#8fa3cf;margin-top:2px;">${t.desc}</div>`;
+  const t1=o.querySelector('.t1'); if(t1) t1.innerText='트로피 획득!';
+  o.style.display='flex';
+  tone(659,.12,'triangle',.08); tone(784,.12,'triangle',.08,.12); tone(988,.3,'triangle',.09,.24);
+  setTimeout(()=>{ o.style.display='none'; const t1b=o.querySelector('.t1'); if(t1b) t1b.innerText='LEVEL UP!'; },1900);
+}
+function openTrophies(){
+  sfx.click(); setOpen=true; joyEnd();
+  checkTrophies(true);
+  const got=(S.trophies||[]).length;
+  const b=document.getElementById('trophyBody');
+  let html=`<div style="text-align:center;color:var(--sub);font-size:15px;margin-bottom:12px;">${got} / ${TROPHIES.length} 개 달성</div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">`;
+  TROPHIES.forEach(t=>{
+    const has=(S.trophies||[]).includes(t.id);
+    html+=`<div style="background:${has?'#FFF7E0':'#EDF1F8'};border-radius:14px;padding:12px;text-align:center;${has?'':'opacity:.5;'}">
+      <div style="font-size:32px;filter:${has?'none':'grayscale(1)'};">${has?t.icon:'&#128274;'}</div>
+      <div style="font-size:15px;margin-top:4px;color:${has?'#243044':'#8fa3cf'};">${t.name}</div>
+      <div style="font-size:12px;color:var(--sub);font-weight:normal;margin-top:2px;">${t.desc}</div></div>`;
+  });
+  html+='</div>';
+  b.innerHTML=html;
+  document.getElementById('trophyOverlay').style.display='flex';
 }
 function addWrong(w, cur){
   const q={prompt:cur.prompt, options:cur.options, answerIndex:cur.answerIndex};
@@ -2581,6 +2703,7 @@ function finishQuiz(){
     questProg('clear', Q.world.id);
   } else if(win){ sfx.star(); }
   save(); updateHud();
+  setTimeout(()=>checkTrophies(), 2600);  /* 결과 연출 후 트로피 연출 */
   const wIdx=WORLDS.findIndex(w=>w.id===Q.world.id);
   if(wIdx>=0) refreshBeacon(wIdx);
   document.getElementById('resTitle').innerText = Q.review ? (win?'복습 완료!':'조금만 더!') : (win ? '클리어!' : '아쉬워요!');
@@ -2750,6 +2873,8 @@ document.getElementById('questClose').onclick=()=>{
   setOpen=false;
 };
 document.getElementById('hQuestChip').onclick=()=>{ if(started && !quizOpen && !shopOpen) openQuests(); };
+document.getElementById('hTrophyChip').onclick=()=>{ if(started && !quizOpen && !shopOpen) openTrophies(); };
+document.getElementById('trophyClose').onclick=()=>{ sfx.click(); document.getElementById('trophyOverlay').style.display='none'; setOpen=false; };
 
 /* ============================================================
    자체 대화상자 (전체화면에서 브라우저 prompt/confirm이 차단되므로)
@@ -3182,14 +3307,16 @@ function renderPlayMenu(){
   const b=document.getElementById('playBody');
   const games=[
     {id:'star', icon:'&#11088;', name:'별 받기', desc:'떨어지는 별을 받아요'},
-    {id:'memory', icon:'&#127183;', name:'기억력 카드', desc:'같은 그림 짝을 맞춰요'}
+    {id:'memory', icon:'&#127183;', name:'기억력 카드', desc:'같은 그림 짝을 맞춰요'},
+    {id:'run', icon:'&#127939;', name:'펫 달리기', desc:'장애물을 뛰어넘어요'},
+    {id:'mole', icon:'&#128058;', name:'두더지 잡기', desc:'나오는 두더지를 빨리 탭!'}
   ];
   b.innerHTML=`<div style="color:var(--sub);font-size:14px;margin-bottom:12px;text-align:center;">
     오늘 놀이 보상 ${playEarnedToday()} / ${PLAY_DAILY_CAP} &#128142; ${left<=0?'(오늘 보상 끝! 그래도 놀 수 있어요)':''}</div>`;
   games.forEach(g=>{
     const row=document.createElement('div'); row.className='shopRow'; row.style.cursor='pointer';
     row.innerHTML=`<div class="ic">${g.icon}</div><div class="info"><div class="nm">${g.name}</div><div class="ds">${g.desc}</div></div><button class="sBtn">놀기</button>`;
-    row.onclick=()=>{ sfx.click(); if(g.id==='star') startStarCatch(); else startMemory(); };
+    row.onclick=()=>{ sfx.click(); if(g.id==='star') startStarCatch(); else if(g.id==='memory') startMemory(); else if(g.id==='run') startPetRun(); else startMole(); };
     b.appendChild(row);
   });
 }
@@ -3311,6 +3438,110 @@ function finishMemory(moves, ms){
   showMiniResult('짝 맞추기 성공!', moves+'번 만에 완성', got, reward);
 }
 
+/* ---------- 미니게임 3: 펫 달리기 (탭하면 점프, 장애물 회피) ---------- */
+function startPetRun(){
+  stopMini();
+  const b=document.getElementById('playBody');
+  const size=Math.min(360, window.innerWidth-90);
+  const H=Math.round(size*0.75);
+  b.innerHTML=`<div style="text-align:center;">
+    <div style="margin-bottom:8px;font-size:17px;">점수 <b id="rnScore" style="color:var(--dia)">0</b></div>
+    <canvas id="rnCanvas" width="${size}" height="${H}" style="border-radius:18px;background:linear-gradient(#bfe6ff,#dff3d0);touch-action:none;width:${size}px;height:${H}px;"></canvas>
+    <div style="color:var(--sub);font-size:13px;margin-top:8px;">화면을 탭하면 폴짝 뛰어요!</div>
+  </div>`;
+  const cv=document.getElementById('rnCanvas'), ctx=cv.getContext('2d');
+  const W=cv.width, Hh=cv.height, ground=Hh-30;
+  let py=0, vy=0, jumping=false, score=0, obs=[], spawnT=0, spd=200, alive=true, last=performance.now();
+  const activePet = (S.activePet!=null && S.pets[S.activePet] && S.pets[S.activePet].hatched) ? S.pets[S.activePet].type : null;
+  const petIcon = activePet ? petType(activePet).icon : '🐾';
+  function jump(){ if(!jumping && alive){ vy=-360; jumping=true; sfx.click(); } }
+  cv.addEventListener('pointerdown',jump);
+  function loop(now){
+    const d=Math.min(0.05,(now-last)/1000); last=now;
+    if(alive){
+      spd+=d*6; score+=d*10;
+      vy+=1100*d; py+=vy*d;
+      if(py>0){ py=0; vy=0; jumping=false; }
+      spawnT-=d;
+      if(spawnT<=0){ spawnT=0.9+Math.random()*0.7; obs.push({x:W+20, w:18+Math.random()*14, h:24+Math.random()*20}); }
+      obs.forEach(o=>o.x-=spd*d);
+      obs=obs.filter(o=>o.x>-40);
+      /* 충돌 */
+      const px=60;
+      obs.forEach(o=>{ if(o.x<px+18 && o.x+o.w>px-18 && py>-(o.h)){ alive=false; } });
+      document.getElementById('rnScore').innerText=Math.floor(score);
+    }
+    ctx.clearRect(0,0,W,Hh);
+    ctx.fillStyle='#7CC15E'; ctx.fillRect(0,ground,W,Hh-ground);
+    ctx.font='30px serif'; ctx.fillText(petIcon,60-16,ground+py-4);
+    ctx.fillStyle='#8a5a3a';
+    obs.forEach(o=>{ ctx.fillRect(o.x,ground-o.h,o.w,o.h); });
+    if(!alive){
+      ctx.fillStyle='rgba(0,0,0,.4)'; ctx.fillRect(0,0,W,Hh);
+      ctx.fillStyle='#fff'; ctx.font='bold 26px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('부딪혔어요!',W/2,Hh/2); ctx.textAlign='left';
+      setTimeout(()=>finishRun(Math.floor(score)), 800);
+      return;
+    }
+    miniRAF=requestAnimationFrame(loop);
+  }
+  miniRAF=requestAnimationFrame(loop);
+  miniCleanup=()=>{ cv.removeEventListener('pointerdown',jump); };
+}
+function finishRun(score){
+  stopMini();
+  const reward=Math.min(10, Math.floor(score/12));
+  const got=addPlayDiamonds(reward);
+  sfx.star();
+  showMiniResult('펫 달리기 끝!', score+'점 달렸어요', got, reward);
+}
+
+/* ---------- 미니게임 4: 두더지 잡기 ---------- */
+function startMole(){
+  stopMini();
+  const b=document.getElementById('playBody');
+  let score=0, time=25, holes=9, active=-1, moleT=0;
+  b.innerHTML=`<div style="text-align:center;">
+    <div style="display:flex;justify-content:space-between;margin-bottom:10px;font-size:17px;">
+      <span>잡은 수 <b id="mlScore" style="color:var(--dia)">0</b></span>
+      <span>시간 <b id="mlTime" style="color:#e2574a">25</b>초</span>
+    </div>
+    <div id="moleGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:320px;margin:0 auto;"></div>
+    <div style="color:var(--sub);font-size:13px;margin-top:10px;">두더지가 나오면 얼른 탭하세요!</div>
+  </div>`;
+  const grid=document.getElementById('moleGrid');
+  const cells=[];
+  for(let i=0;i<holes;i++){
+    const c=document.createElement('button');
+    c.style.cssText='aspect-ratio:1;border:none;border-radius:50%;background:#8a6a4a;font-size:34px;font-family:inherit;cursor:pointer;box-shadow:inset 0 -6px 0 rgba(0,0,0,.2);';
+    c.innerText='';
+    c.onclick=()=>{ if(i===active){ score++; document.getElementById('mlScore').innerText=score; sfx.correct(); c.innerText=''; active=-1; if(navigator.vibrate)navigator.vibrate(30); } };
+    grid.appendChild(c); cells.push(c);
+  }
+  const tick=setInterval(()=>{ time--; const el=document.getElementById('mlTime'); if(el)el.innerText=time; if(time<=0){ clearInterval(tick); finishMole(score); } },1000);
+  let last=performance.now();
+  function loop(now){
+    const d=(now-last)/1000; last=now;
+    moleT-=d;
+    if(moleT<=0){
+      moleT=0.6+Math.random()*0.5;
+      if(active>=0){ cells[active].innerText=''; }
+      active=Math.floor(Math.random()*holes);
+      cells[active].innerText='🐹';
+    }
+    miniRAF=requestAnimationFrame(loop);
+  }
+  miniRAF=requestAnimationFrame(loop);
+  miniCleanup=()=>{ clearInterval(tick); };
+}
+function finishMole(score){
+  stopMini();
+  const reward=Math.min(10, Math.floor(score/2));
+  const got=addPlayDiamonds(reward);
+  sfx.star();
+  showMiniResult('두더지 잡기 끝!', score+'마리 잡았어요', got, reward);
+}
+
 function showMiniResult(title, sub, got, wanted){
   const b=document.getElementById('playBody');
   const capped = got<wanted;
@@ -3325,7 +3556,12 @@ function showMiniResult(title, sub, got, wanted){
       <button class="rBtn ghost" id="miniMenu">다른 놀이</button>
     </div>
   </div>`;
-  document.getElementById('miniAgain').onclick=()=>{ sfx.click(); if(title.indexOf('별')>=0) startStarCatch(); else startMemory(); };
+  document.getElementById('miniAgain').onclick=()=>{ sfx.click();
+    if(title.indexOf('별')>=0) startStarCatch();
+    else if(title.indexOf('짝')>=0) startMemory();
+    else if(title.indexOf('달리기')>=0) startPetRun();
+    else startMole();
+  };
   document.getElementById('miniMenu').onclick=()=>{ sfx.click(); renderPlayMenu(); };
 }
 
@@ -3508,6 +3744,7 @@ function renderShop(){
             pet.hatched=true; sfx.star();
             toast(`알에서 ${tp.icon} ${(pet.shiny?'반짝이는 ':'')}${tp.name}이(가) 태어났어요!`);
             if(S.activePet===i) setCompanion();
+            setTimeout(()=>checkTrophies(), 400);
           } else { sfx.correct(); }
           save(); updateHud(); updatePetChip(); renderShop();
         };
@@ -3523,6 +3760,7 @@ function renderShop(){
             sfx.star();
             toast(`&#128081; ${tp.name}이(가) ${tp.evo}(으)로 진화했어요!`);
             if(S.activePet===i) setCompanion();
+            setTimeout(()=>checkTrophies(), 400);
           } else { sfx.correct(); }
           save(); updateHud(); renderShop();
         };
