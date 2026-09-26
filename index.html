@@ -653,7 +653,7 @@ const WORLDS=[
 /* ============================================================
    버전 / 멀티 프로필 저장
 ============================================================ */
-const VERSION='4.1.1';
+const VERSION='4.1.2';
 const SAVE_VER=3;
 const SAVE_KEY='starlight3d_mp';
 const MAX_PROFILES=4;
@@ -2470,13 +2470,27 @@ function nextQ(){
 /* ============================================================
    행맨 (영어 성)
 ============================================================ */
+let _voices=[];
+function loadVoices(){ try{ _voices=speechSynthesis.getVoices()||[]; }catch(e){} }
+if('speechSynthesis' in window){
+  loadVoices();
+  speechSynthesis.onvoiceschanged=loadVoices;
+}
 function speakEn(w){
   if(!('speechSynthesis' in window)) return;
   try{
     speechSynthesis.cancel();
-    const u=new SpeechSynthesisUtterance(w);
-    u.lang='en-US'; u.rate=.82;
-    speechSynthesis.speak(u);
+    const doSpeak=()=>{
+      const u=new SpeechSynthesisUtterance(w);
+      u.lang='en-US'; u.rate=.8; u.pitch=1;
+      /* 영어 음성 우선 선택 (한국어 기기에서도 영어 발음되도록) */
+      if(!_voices.length) loadVoices();
+      const en=_voices.find(v=>/en[-_]?US/i.test(v.lang)) || _voices.find(v=>/^en/i.test(v.lang));
+      if(en) u.voice=en;
+      speechSynthesis.speak(u);
+    };
+    /* 음성 목록이 아직 안 왔으면 잠깐 기다렸다 재생 */
+    if(!_voices.length){ loadVoices(); setTimeout(doSpeak, 220); } else doSpeak();
   }catch(e){}
 }
 const HG_MAX=6;
@@ -2501,10 +2515,11 @@ let H=null;
 function renderHangman(){
   const q=drawFrom('hangman', ENGLISH_DATA);
   H={word:q.word.toUpperCase(), mean:q.mean, guessed:new Set(), miss:0, done:false};
+  H.guessed.add(H.word[0]); /* 첫 글자는 힌트로 미리 공개 */
   document.getElementById('quizVisual').innerHTML=
     `<div id="hgFig">${hangmanSVG(0)}</div>
      <button id="hgSpeak">&#128266; 다시 듣기</button>
-     <div class="hgHint">힌트: ${H.mean}</div>`;
+     <div class="hgHint">힌트: ${H.mean} &#183; ${H.word.length}글자</div>`;
   document.getElementById('quizPrompt').innerHTML='<div id="hgBlanks"></div>';
   const box=document.getElementById('quizOpts');
   box.style.gridTemplateColumns='1fr';
@@ -2513,7 +2528,9 @@ function renderHangman(){
   for(let i=0;i<26;i++){
     const ch=String.fromCharCode(65+i);
     const b=document.createElement('button');
-    b.className='hgKey'; b.innerText=ch;
+    b.className='hgKey'+(H.guessed.has(ch)?' hit':'');
+    b.innerText=ch;
+    if(H.guessed.has(ch)) b.disabled=true;
     b.onclick=()=>hgPick(ch,b);
     keys.appendChild(b);
   }
