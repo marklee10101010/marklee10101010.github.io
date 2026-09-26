@@ -653,7 +653,7 @@ const WORLDS=[
 /* ============================================================
    버전 / 멀티 프로필 저장
 ============================================================ */
-const VERSION='4.1.2';
+const VERSION='4.1.3';
 const SAVE_VER=3;
 const SAVE_KEY='starlight3d_mp';
 const MAX_PROFILES=4;
@@ -2470,27 +2470,14 @@ function nextQ(){
 /* ============================================================
    행맨 (영어 성)
 ============================================================ */
-let _voices=[];
-function loadVoices(){ try{ _voices=speechSynthesis.getVoices()||[]; }catch(e){} }
-if('speechSynthesis' in window){
-  loadVoices();
-  speechSynthesis.onvoiceschanged=loadVoices;
-}
 function speakEn(w){
   if(!('speechSynthesis' in window)) return;
   try{
     speechSynthesis.cancel();
-    const doSpeak=()=>{
-      const u=new SpeechSynthesisUtterance(w);
-      u.lang='en-US'; u.rate=.8; u.pitch=1;
-      /* 영어 음성 우선 선택 (한국어 기기에서도 영어 발음되도록) */
-      if(!_voices.length) loadVoices();
-      const en=_voices.find(v=>/en[-_]?US/i.test(v.lang)) || _voices.find(v=>/^en/i.test(v.lang));
-      if(en) u.voice=en;
-      speechSynthesis.speak(u);
-    };
-    /* 음성 목록이 아직 안 왔으면 잠깐 기다렸다 재생 */
-    if(!_voices.length){ loadVoices(); setTimeout(doSpeak, 220); } else doSpeak();
+    const u=new SpeechSynthesisUtterance(w);
+    u.lang='en-US'; u.rate=.82;
+    /* 일부 안드로이드에서 cancel 직후 speak가 씹히는 것 방지 */
+    setTimeout(()=>{ try{ speechSynthesis.speak(u); }catch(e){} }, 60);
   }catch(e){}
 }
 const HG_MAX=6;
